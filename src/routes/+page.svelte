@@ -1,11 +1,22 @@
-<h1>Welcome to SvelteKit</h1>
-<p>
-  Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation
-</p>
-<h1 class="text-3xl font-bold underline">Hello world!</h1>
+<script lang="ts">
+	const functions = ["x = y", "y = x", "x = y + 1", "y = x + 1"];
+</script>
+
+<body class="flex-row columns-2">
+	<div id="functions" class="">
+		<div id="functioncol" class="flex-col">
+			{#each functions as func, index (index)}
+				<div>{func}</div>
+			{/each}
+		</div>
+	</div>
+	<div>
+		<canvas id="canvas"> </canvas>
+	</div>
+</body>
 
 <style lang="postcss">
-  :global(html) {
-    background-color: theme(colors.gray.100);
-  }
+	:global(html) {
+		background-color: theme(colors.gray.100);
+	}
 </style>

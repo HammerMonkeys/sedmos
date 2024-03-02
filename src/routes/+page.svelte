@@ -4,41 +4,39 @@
 	let latex_funcs: string[] = [""];
 </script>
 
-<body class="flex columns-2 h-screen w-screen">
-	<div id="functioncol" class="overflow-y-auto max-h-screen">
-		{#each latex_funcs as func, index (index)}
+<body class="flex columns-2 h-screen w-screen bg-bg-900">
+	<div
+		id="functioncol"
+		class="overflow-y-auto overflow-x-clip max-h-screen resize-x"
+	>
+		{#each latex_funcs as _, index (index)}
 			<div id="functioncontainer" class="flex flex-nowrap bg-gray-500 flex-1">
-				<div class="bg-gray-50 h-max w-8">{index}</div>
-				<!-- <MathQuill bind:latex[index] /> -->
-				<MathQuill bind:latex={latex_funcs[index]} />
+				<div
+					class="bg-secondary-900 w-8 min-w-8 text-xs text-primary-300 pl-1 border-r-[1] border-accent-500"
+				>
+					{index + 1}
+				</div>
+				<MathQuill
+					class="bg-bg-900 text-primary-100 w-full p-2 min-h-16 border-b-[1] active:border-accent-500 border-secondary-500"
+					bind:latex={latex_funcs[index]}
+				/>
 			</div>
 		{/each}
 		<button
-			class="bg-yellow-400"
+			id="addfunc"
+			class="flex flex-nowrap bg-gray-500 flex-1"
 			on:click={() => (latex_funcs = [...latex_funcs, ""])}
 		>
-			Add func</button
-		>
+			<div class="bg-gray-200 h-max w-8 border-r-black">
+				{latex_funcs.length + 1}
+			</div>
+			<div class="flex-grow-[5] w-40 resize">Add Function</div>
+		</button>
 	</div>
-	<div id="graph" class="w-max bg-blue-400 flex-grow-[3]">
+	<div id="graph" class="w-max bg-blue-100 flex-grow-[1]">
 		<canvas id="canvas" class="w-max"> </canvas>
 	</div>
 </body>
 
-<!-- :global(.mq-math-mode) { -->
-<!-- 	border: none !important; -->
-<!-- } -->
-<!---->
-<!-- :global(.mq-matrixed) { -->
-<!-- 	background: black; -->
-<!-- } -->
-<!---->
-<!-- :global(.mq-matrixed-container) { -->
-<!-- 	background: black; -->
-<!-- } -->
-
 <style lang="postcss">
-	:global(html) {
-		background-color: theme(colors.gray.100);
-	}
 </style>

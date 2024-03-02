@@ -7,19 +7,20 @@
 		"2x^2 = 3",
 		"2y^2 = 3",
 		"x^2 + y^2 = 1",
+		"x^2 + y^2 = 1111111111111111",
 	];
 </script>
 
-<body class="flex flex-row columns-2 h-screen">
-	<div
-		id="functioncol"
-		class="flex flex-col flex-nowrap columns-1 h-max bg-red-50"
-	>
+<body class="flex columns-2 h-screen w-screen">
+	<div id="functioncol" class="overflow-y-auto max-h-screen">
 		{#each functions as func, index (index)}
-			<div id="functioncontainer" class="m-2 p-2 bg-gray-50">{func}</div>
+			<div id="functioncontainer" class="flex flex-nowrap bg-gray-500 flex-1">
+				<div class="bg-gray-50 h-max w-8">{index}</div>
+				<div>{func}</div>
+			</div>
 		{/each}
 	</div>
-	<div id="graph" class="w-max bg-blue-400">
+	<div id="graph" class="w-max bg-blue-400 flex-grow-[3]">
 		<canvas id="canvas" class="w-max"> </canvas>
 	</div>
 </body>

@@ -7,7 +7,7 @@
 <body class="flex columns-2 h-screen w-screen bg-bg-900">
 	<div
 		id="functioncol"
-		class="overflow-y-auto overflow-x-clip max-h-screen resize-x"
+		class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20"
 	>
 		{#each latex_funcs as _, index (index)}
 			<div id="functioncontainer" class="flex flex-nowrap bg-gray-500 flex-1">
@@ -17,7 +17,7 @@
 					{index + 1}
 				</div>
 				<MathQuill
-					class="bg-bg-900 text-primary-100 w-full p-2 min-h-16 border-b-[1] active:border-accent-500 border-secondary-500"
+					class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-b-[1] active:border-accent-500 border-secondary-500 flex"
 					bind:latex={latex_funcs[index]}
 				/>
 			</div>
@@ -39,4 +39,12 @@
 </body>
 
 <style lang="postcss">
+	:global(.mq-focused) {
+		box-shadow: none !important;
+	}
+
+	:global(.mq-root-block) {
+		display: block !important;
+		align-self: center !important;
+	}
 </style>

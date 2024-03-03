@@ -1,6 +1,7 @@
 import * as math from "mathjs";
 import latexToAscii from "./utils/latexToAscii";
 import log from "./log";
+import { Solver } from "odex";
 
 // All dependencies are parsed as "symbols"
 interface Dependencies {
@@ -35,6 +36,17 @@ class CircularDependencyError extends Error {
   }
 }
 
+// todo in JS, error vs exception?
+class UnsupportedFeatureError extends Error {
+  public affected_id: number;
+  public feature: string;
+  constructor(affectedId: number, feature: string) {
+    super(`Unsupported feature: ${feature}`);
+    this.affected_id = affectedId;
+    this.feature = feature;
+  }
+}
+
 function extendMathJS() {
   const isAlphaOriginal = math.parse.isAlpha;
   math.parse.isAlpha = function (c, cPrev, cNext) {
@@ -65,13 +77,15 @@ function buildUniverse(inputData: string[]) {
     "y=4",
     // v fields
     "y'=x^2",
-  ];
+  ]; // todo handle unknown symbol errors
 
   const asciiMath = inputData.map((input) => latexToAscii(input));
   const trees = asciiMath.map((ascii) => math.parse(ascii));
   const formulaeIndices: number[] = [];
 
-  //---------------------     Dependency Resolution
+  // ------------------------------------------
+  // Initial Processing
+  // ------------------------------------------
 
   // dependency map only stores assignments and their dependencies
   const depMap: Map<string, Dependencies> = new Map();
@@ -105,6 +119,9 @@ function buildUniverse(inputData: string[]) {
         dependentVar = assignId as HotVar;
         visType[i] = "curve";
         depVar[i] = dependentVar;
+      } else if (assignId === "y'") {
+        visType[i] = "field";
+        depVar[i] = "y";
       } else {
         visType[i] = "value";
       }
@@ -131,6 +148,21 @@ function buildUniverse(inputData: string[]) {
   // ------------------------------------------
   //     - Scanning for cycles
   //     - Topological sorting
+
+  // for vector fields, only explicit expressions in terms of y' are considered
+  for (const [_, v] of depMap) {
+    const id = v.expId;
+    const deps = v.dependencies;
+
+    for (const dep of deps) {
+      if (dep === "y'") {
+        throw new UnsupportedFeatureError(
+          id,
+          "Only explicit differential equations equations are supported. Try putting y' on the left hand side.",
+        );
+      }
+    }
+  }
 
   const priority = dependencyAnalysis(depMap);
   log("Dependency Priority:", priority);
@@ -208,7 +240,7 @@ function buildUniverse(inputData: string[]) {
 
   // the cold scope is the basic state that doesn't depend on unstable values
   const coldScope = {};
-  const state = new Array(trees.length);
+  const state: Array<number> = new Array(trees.length);
 
   for (const i of priorityIndices) {
     if (hotMap[i]) continue;
@@ -217,11 +249,37 @@ function buildUniverse(inputData: string[]) {
     state[i] = result;
   }
 
+  let vFields = metadata
+    .filter((meta) => meta.type === "field")
+    .map((_, i) => i);
+  let odeSolvers: Map<number, (t: number) => number>;
+
   return {
     metadata,
     state, // overwritten with hot values after eval
 
-    evalWith(indepVar: number, depVar: number) {
+    odeInitialConditions(y0: number, t0: number) {
+      odeSolvers = new Map();
+
+      for (const i of vFields) {
+        const fn = compiled[i];
+
+        const ode = (t: number, Y: number[]): number[] => {
+          const y = Y[0];
+          const scope = { x: t, y, t };
+          return [fn.evaluate(scope)];
+        };
+
+        // todo impl systems of equations
+        const solver = new Solver(ode, 1);
+        const model = solver.integrate(t0, [y0]);
+        const f = (t: number) => model(t)[0];
+
+        odeSolvers.set(i, f);
+      }
+    },
+
+    evalWith(indepVar: number, depVar: number, vectorFields = false) {
       const controlledState = { x: indepVar, y: depVar, t: indepVar };
 
       let scope = { ...coldScope, ...controlledState };
@@ -229,8 +287,16 @@ function buildUniverse(inputData: string[]) {
       for (const i of priorityIndices) {
         if (!hotMap[i]) continue;
 
-        const result = compiled[i].evaluate(scope);
-        state[i] = result;
+        if (metadata[i].type !== "field") {
+          const fn = compiled[i];
+          const result = fn.evaluate(scope);
+          state[i] = result;
+        } else if (vectorFields) {
+          // vector fields require making calls to a 3rd party ODE solver
+          const fn = odeSolvers.get(i)!;
+          const result = fn(depVar);
+          state[i] = result;
+        }
 
         const meta = metadata[i];
         if (meta.type === "curve" || meta.type === "field") {

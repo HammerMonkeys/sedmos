@@ -4,7 +4,8 @@
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate"; // import flip from svelte/animate
 	import { onMount } from "svelte";
-	import { ceil } from "mathjs";
+	import { ceil, number } from "mathjs";
+	import { abs } from "mathjs";
 
 	let latex_funcs: string[] = [""];
 
@@ -26,47 +27,84 @@
 	}
 
 	let canvas: HTMLCanvasElement;
+	let vporigin = { x: 0, y: 0 };
+	let dragging = false;
+	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
 
 	onMount(() => {
 		const ctx = canvas.getContext("2d")!;
-		drawGrid(ctx);
+		drawGrid(ctx, vporigin);
 
 		function resizeCanvas(): void {
 			canvas.width = canvas.clientWidth;
 			canvas.height = canvas.clientHeight;
-			drawGrid(ctx);
+			drawGrid(ctx, vporigin);
 		}
 
 		new ResizeObserver(resizeCanvas).observe(canvas);
 
 		window.onresize = resizeCanvas;
 		resizeCanvas();
+
+		canvas.addEventListener("mousedown", (event) => {
+			dragging = true;
+			previousPoint = { x: event.clientX, y: event.clientY };
+		});
+
+		canvas.addEventListener("mousemove", (event) => {
+			if (dragging) {
+				vporigin.x += event.clientX - previousPoint.x;
+				vporigin.y += event.clientY - previousPoint.y;
+				previousPoint = { x: event.clientX, y: event.clientY };
+				drawGrid(ctx, vporigin);
+			}
+		});
+
+		canvas.addEventListener("mouseup", (_) => {
+			dragging = false;
+		});
 	});
 
-	function drawGrid(ctx: CanvasRenderingContext2D) {
+	function drawGrid(
+		ctx: CanvasRenderingContext2D,
+		vporigin: { x: number; y: number },
+	) {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
-		const spacing = canvas.width / 20;
-		const ycount = ceil(canvas.height / spacing);
+
+		var spacing = canvas.width / 20;
+		var ycount = ceil(canvas.height / spacing);
+		while (ycount >= 55) {
+			spacing *= 2;
+			ycount = ceil(canvas.height / spacing);
+		}
+
+		console.log("VPO: " + vporigin.x + ", " + vporigin.y);
+		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
+		console.log("TL: " + tl.x + ", " + tl.y);
+
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 0.2;
 		for (let i = 0; i < 20; i++) {
+			// draw vertical
 			if (i % 5 == 0) {
 				ctx.lineWidth = 0.5;
+				ctx.fillText(String(i), i * spacing, canvas.height / 2);
 			}
 			ctx.beginPath();
-			ctx.moveTo(i * spacing, 0);
-			ctx.lineTo(i * spacing, canvas.height);
+			ctx.moveTo(i * spacing + tl.x, 0);
+			ctx.lineTo(i * spacing + tl.x, canvas.height);
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}
 		for (let i = 0; i < ycount; i++) {
+			// draw horizontal
 			if (i % 5 == 0) {
 				ctx.lineWidth = 0.5;
 			}
 			ctx.beginPath();
-			ctx.moveTo(0, i * spacing);
-			ctx.lineTo(canvas.width, i * spacing);
+			ctx.moveTo(0, tl.y + i * spacing);
+			ctx.lineTo(canvas.width, tl.y + i * spacing);
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}

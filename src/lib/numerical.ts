@@ -240,7 +240,9 @@ function buildUniverse(inputData: string[]) {
 
   // the cold scope is the basic state that doesn't depend on unstable values
   const coldScope = {};
-  const state: Array<number> = new Array(trees.length);
+  // second number is to store the IVP curve assoc. with vfield
+  const state: Array<number | [number | undefined, number | undefined]> =
+    new Array(trees.length);
 
   for (const i of priorityIndices) {
     if (hotMap[i]) continue;
@@ -252,7 +254,7 @@ function buildUniverse(inputData: string[]) {
   let vFields = metadata
     .filter((meta) => meta.type === "field")
     .map((_, i) => i);
-  let odeSolvers: Map<number, (t: number) => number>;
+  let odeSolvers: Map<number, (scope: any) => number>;
 
   return {
     metadata,
@@ -264,16 +266,20 @@ function buildUniverse(inputData: string[]) {
       for (const i of vFields) {
         const fn = compiled[i];
 
-        const ode = (t: number, Y: number[]): number[] => {
-          const y = Y[0];
-          const scope = { x: t, y, t };
+        let scopeLock: [any] = [{}];
+        const ode = (_: number, Y: number[]): number[] => {
+          const scope = scopeLock[0];
           return [fn.evaluate(scope)];
         };
 
         // todo impl systems of equations
         const solver = new Solver(ode, 1);
         const model = solver.integrate(t0, [y0]);
-        const f = (t: number) => model(t)[0];
+
+        const f = (scope: any) => {
+          scopeLock[0] = scope;
+          return model(scope.t)[0];
+        };
 
         odeSolvers.set(i, f);
       }
@@ -291,11 +297,28 @@ function buildUniverse(inputData: string[]) {
           const fn = compiled[i];
           const result = fn.evaluate(scope);
           state[i] = result;
-        } else if (vectorFields) {
+        } else {
+          // vector field eval two parts:
+          //     - IVP curve
+          //     - vector field
+
           // vector fields require making calls to a 3rd party ODE solver
-          const fn = odeSolvers.get(i)!;
-          const result = fn(depVar);
-          state[i] = result;
+          let slopeResult: number | undefined;
+          let ivpResult: number | undefined;
+
+          const fn = odeSolvers.get(i);
+          if (fn) {
+            ivpResult = fn(scope);
+          }
+
+          if (vectorFields) {
+            // vector field, not IVP curve
+            const fn = compiled[i];
+            const result = fn.evaluate(scope);
+            slopeResult = result;
+          }
+
+          state[i] = [slopeResult, ivpResult];
         }
 
         const meta = metadata[i];

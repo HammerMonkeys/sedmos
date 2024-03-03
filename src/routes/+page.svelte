@@ -49,18 +49,26 @@
 		const spacing = canvas.width / 20;
 		const ycount = ceil(canvas.height / spacing);
 		ctx.strokeStyle = "black";
-		ctx.lineWidth = 0.5;
+		ctx.lineWidth = 0.2;
 		for (let i = 0; i < 20; i++) {
+			if (i % 5 == 0) {
+				ctx.lineWidth = 0.5;
+			}
 			ctx.beginPath();
 			ctx.moveTo(i * spacing, 0);
 			ctx.lineTo(i * spacing, canvas.height);
 			ctx.stroke();
+			ctx.lineWidth = 0.2;
 		}
 		for (let i = 0; i < ycount; i++) {
+			if (i % 5 == 0) {
+				ctx.lineWidth = 0.5;
+			}
 			ctx.beginPath();
 			ctx.moveTo(0, i * spacing);
 			ctx.lineTo(canvas.width, i * spacing);
 			ctx.stroke();
+			ctx.lineWidth = 0.2;
 		}
 	}
 </script>

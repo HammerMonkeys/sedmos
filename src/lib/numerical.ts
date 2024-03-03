@@ -8,6 +8,14 @@ interface Dependencies {
   expId: number;
 }
 
+type HotVar = "x" | "y" | "t";
+type VisualType = "value" | "curve" | "field" | "novisual";
+interface Metadata {
+  type: VisualType;
+  dependentVar?: HotVar;
+  hot: boolean; // hot means it needs re-eval per xy coordinate
+}
+
 interface Universe {
   globalScope: Map<string, any>;
   setIndepVar(value: number): void;
@@ -36,19 +44,29 @@ function handle() {
     "c=18",
     "",
     "d = 2\\cdot a + b - c",
+    // function test
     "f(x) = 5x",
     "f(10)",
     "f(x)",
     "f(1)",
+    /// hot test
+    "g=2x",
+    "h=g+1",
+    "y=4",
+    // v fields
+    // "y'=x^2", // todo impl
   ];
 
   const asciiMath = inputData.map((input) => latexToAscii(input));
   const trees = asciiMath.map((ascii) => math.parse(ascii));
+  const formulaeIndices: number[] = [];
 
   //---------------------     Dependency Resolution
 
   // dependency map only stores assignments and their dependencies
-  let depMap: Map<string, Dependencies> = new Map();
+  const depMap: Map<string, Dependencies> = new Map();
+  const visType: VisualType[] = new Array(trees.length);
+  const depVar: (HotVar | undefined)[] = new Array(trees.length);
 
   for (let i = 0; i < trees.length; i++) {
     const root = trees[i];
@@ -66,10 +84,23 @@ function handle() {
       ignoreDeps = nodeFn.params;
       traversalHead = nodeFn.expr;
       assignId = nodeFn.name;
+      visType[i] = "novisual";
     } else if (root.type === "AssignmentNode") {
       const nodeAssign = root as math.AssignmentNode;
       traversalHead = nodeAssign.value;
       assignId = nodeAssign.name;
+
+      let dependentVar: HotVar | undefined;
+      if (["x", "y", "t"].includes(assignId)) {
+        dependentVar = assignId as HotVar;
+        visType[i] = "curve";
+        depVar[i] = dependentVar;
+      } else {
+        visType[i] = "value";
+      }
+    } else {
+      visType[i] = "value";
+      formulaeIndices.push(i);
     }
 
     traversalHead.traverse((node) => {
@@ -80,34 +111,128 @@ function handle() {
     });
 
     if (assignId) depMap.set(assignId, { dependencies: nodeDeps, expId: i });
+    else depMap.set(i.toString(), { dependencies: nodeDeps, expId: i });
   }
 
   log("Dependencies:", depMap);
 
-  // ---------------------     Dependency Analysis
+  // ------------------------------------------
+  // Dependency Analysis
+  // ------------------------------------------
   //     - Scanning for cycles
   //     - Topological sorting
-  // ---------------------
 
   const priority = dependencyAnalysis(depMap);
   log("Dependency Priority:", priority);
 
-  // ---------------------     Compilation
+  // an object is hot if it, or its dependencies, depend on x,y, or t.
 
-  // expressions -> compiled functions
+  const hotMap: boolean[] = new Array(trees.length).fill(false);
+  for (const root of priority) {
+    const rootDep = depMap.get(root)!;
+    const i = rootDep.expId;
+    const childs = rootDep.dependencies;
 
-  // the scope is mutated during eval, some variables
-  // like x are partially controlled programatically
-  let scopeGlobal = { x: 0 };
+    for (const child of childs) {
+      if (["x", "y", "t"].includes(child)) {
+        hotMap[i] = true;
+        break;
+      }
+
+      const childDep = depMap.get(child)!;
+      const childId = childDep.expId;
+
+      if (hotMap[childId]) {
+        hotMap[i] = true;
+        break;
+      }
+    }
+  }
+
+  for (const i of formulaeIndices) {
+    const deps = depMap.get(i.toString())!.dependencies;
+
+    let hot = deps.some((dep) => ["x", "y", "t"].includes(dep));
+    if (hot) break;
+
+    for (const dep of deps) {
+      const depId = depMap.get(dep)!.expId;
+      if (hotMap[depId]) {
+        hot = true;
+        break;
+      }
+    }
+  }
+
+  log("Hot Map:", hotMap);
+
+  // ------------------------------------------
+  // Metadata
+  // ------------------------------------------
+
+  const metadata: Metadata[] = new Array(trees.length);
+  for (let i = 0; i < trees.length; i++) {
+    // hot value types should be interpreted as curves
+    if (hotMap[i] && visType[i] === "value") {
+      visType[i] = "curve";
+      depVar[i] = "y";
+      // todo hot values in terms of y will be problematic
+    }
+
+    metadata[i] = {
+      type: visType[i],
+      hot: hotMap[i],
+      dependentVar: depVar[i],
+    };
+  }
+
+  // ------------------------------------------
+  // Compilation
+  // ------------------------------------------
+
+  // compile all expressions
   const compiled = trees.map((tree) => tree.compile());
-  const callable = compiled.map((fn) => (scope: any) => {
-    if (scope) scopeGlobal = { ...scopeGlobal, ...scope };
-    return fn.evaluate(scopeGlobal);
-  });
 
-  // for (const call of callable) {
-  //   log(call({ x: 2 }));
-  // }
+  const priorityIndices = priority.map((label) => depMap.get(label)!.expId);
+  priorityIndices.push(...formulaeIndices); // formulae are lowest priority
+
+  // the cold scope is the basic state that doesn't depend on unstable values
+  const coldScope = {};
+  const state = new Array(trees.length);
+
+  for (const i of priorityIndices) {
+    if (hotMap[i]) continue;
+    if (!compiled[i]) continue;
+    const result = compiled[i].evaluate(coldScope);
+    state[i] = result;
+  }
+
+  return {
+    metadata,
+    state, // overwritten with hot values after eval
+
+    evalWith(indepVar: number, depVar: number) {
+      const controlledState = { x: indepVar, y: depVar, t: indepVar };
+
+      let scope = { ...coldScope, ...controlledState };
+
+      for (const i of priorityIndices) {
+        if (!hotMap[i]) continue;
+
+        const result = compiled[i].evaluate(scope);
+        state[i] = result;
+
+        const meta = metadata[i];
+        if (meta.type === "curve" || meta.type === "field") {
+          // x,y,t need to be reinitialized after each curve/field due to impurities in
+          // the way the scope is managed
+          scope = { ...scope, ...controlledState };
+        }
+      }
+
+      return this;
+    },
+  };
 }
 
 // returns a prioritized list of of the inputs based on their valid evaluation order
@@ -128,6 +253,13 @@ function dependencyAnalysis(depMap: Map<string, Dependencies>): string[] {
     const childs = depMap.get(node)?.dependencies ?? [];
 
     if (childs.length == 0) {
+      cache.set(node, 0);
+      return 0;
+    }
+
+    // x, y, t are programatically controlled
+    // and should be declared as implied assignments
+    if (["x", "y", "t"].includes(node)) {
       cache.set(node, 0);
       return 0;
     }
@@ -153,4 +285,11 @@ function dependencyAnalysis(depMap: Map<string, Dependencies>): string[] {
   return Array.from(depMap.keys()).sort((a, b) => search(a) - search(b));
 }
 
-handle();
+let uni = handle();
+log("State:", JSON.stringify(uni.state, null, 2));
+
+log("Eval with", 3, 2);
+uni.evalWith(3, 2);
+
+log("State:", JSON.stringify(uni.state, null, 2));
+log("Universe:", uni);

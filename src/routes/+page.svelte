@@ -5,7 +5,8 @@
 	import { flip } from "svelte/animate"; // import flip from svelte/animate
 	import { onMount } from "svelte";
 	import { ceil, number } from "mathjs";
-	import { abs } from "mathjs";
+  import buildRenderer from "../lib/foreground";
+  import log from "$lib/log";
 
 	let latex_funcs: string[] = [""];
 
@@ -31,15 +32,31 @@
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
 	let scale = 15; // # of square units horizontally (higher = zoomed out)
+  let ctx: CanvasRenderingContext2D;
+
+  $: renderChunk =
+    canvas != undefined && ctx != undefined
+      ? buildRenderer(canvas, ctx, latex_funcs)
+      : null;
+
+  function renderAllChunks() {
+    if (!renderChunk) {
+      return;
+    }
+
+    renderChunk([0, 0]);
+    renderChunk([1, 0]);
+    renderChunk([1, -1]);
+  }
 
 	onMount(() => {
-		const ctx = canvas.getContext("2d")!;
-		drawGrid(ctx, vporigin);
+		ctx = canvas.getContext("2d")!;
+		drawGrid();
 
 		function resizeCanvas(): void {
 			canvas.width = canvas.clientWidth;
 			canvas.height = canvas.clientHeight;
-			drawGrid(ctx, vporigin);
+			drawGrid();
 		}
 
 		new ResizeObserver(resizeCanvas).observe(canvas);
@@ -78,9 +95,9 @@
 	}
 
 	function drawGrid(
-		ctx: CanvasRenderingContext2D,
-		vporigin: { x: number; y: number },
 	) {
+    if (!ctx) return;
+
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
@@ -139,7 +156,15 @@
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}
+
+    renderAllChunks();
 	}
+
+  $: if (latex_funcs) {
+    drawGrid();
+    renderAllChunks();
+  }
+
 </script>
 
 <body class="flex columns-2 h-screen w-screen bg-bg-900">

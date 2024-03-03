@@ -13,10 +13,6 @@ const microStep = chunkWidth / microDivisions;
 const macroStep = chunkWidth / macroDivisions;
 const vectorArrowSize = 10;
 
-function test(): (a: number) => void {
-  return (a) => 3;
-}
-
 let previousUniverse: Universe | undefined;
 export function buildRenderer(
   canvas: HTMLCanvasElement,

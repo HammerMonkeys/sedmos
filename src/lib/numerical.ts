@@ -55,17 +55,18 @@ function extendMathJS() {
 }
 extendMathJS();
 
-function buildUniverse(inputData: string[]) {
+export function buildUniverse(inputData: string[]) {
   // TODO remove
   log("\n\n\n\n");
 
   // todo remove
-  inputData = [
+  const exampleInputData = [
     "a=2",
     "b=12",
     "c=18",
     "",
     "d = 2\\cdot a + b - c",
+    "y=-{x}^2+2",
     // function test
     "f(x) = 5x",
     "f(10)",
@@ -78,8 +79,12 @@ function buildUniverse(inputData: string[]) {
     // v fields
     "y'=x^2",
   ]; // todo handle unknown symbol errors
+  inputData = inputData ?? exampleInputData;
 
   const asciiMath = inputData.map((input) => latexToAscii(input));
+
+  log(asciiMath);
+
   const trees = asciiMath.map((ascii) => math.parse(ascii));
   const formulaeIndices: number[] = [];
 
@@ -111,19 +116,22 @@ function buildUniverse(inputData: string[]) {
       visType[i] = "novisual";
     } else if (root.type === "AssignmentNode") {
       const nodeAssign = root as math.AssignmentNode;
+      const name = nodeAssign.name;
       traversalHead = nodeAssign.value;
-      assignId = nodeAssign.name;
 
       let dependentVar: HotVar | undefined;
-      if (["x", "y", "t"].includes(assignId)) {
+      if (["x", "y", "t"].includes(name)) {
         dependentVar = assignId as HotVar;
         visType[i] = "curve";
         depVar[i] = dependentVar;
-      } else if (assignId === "y'") {
+        formulaeIndices.push(i);
+      } else if (name === "y'") {
         visType[i] = "field";
         depVar[i] = "y";
+        formulaeIndices.push(i);
       } else {
         visType[i] = "value";
+        assignId = name;
       }
     } else {
       visType[i] = "value";
@@ -252,8 +260,8 @@ function buildUniverse(inputData: string[]) {
   }
 
   let vFields = metadata
-    .filter((meta) => meta.type === "field")
-    .map((_, i) => i);
+    .map((m, i) => (m.type === "field" ? i : -1))
+    .filter((i) => i != -1);
   let odeSolvers: Map<number, (scope: any) => number> = new Map();
 
   return {
@@ -389,6 +397,10 @@ log("State:", JSON.stringify(uni.state, null, 2));
 
 log("Eval with", 3, 2);
 uni.evalWith(3, 2);
-
 log("State:", JSON.stringify(uni.state, null, 2));
+
+log("Eval with", 1, 1);
+uni.evalWith(1, 1);
+log("State:", JSON.stringify(uni.state, null, 2));
+
 log("Universe:", uni);

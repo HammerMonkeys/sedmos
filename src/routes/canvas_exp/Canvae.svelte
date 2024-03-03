@@ -1,0 +1,180 @@
+<script lang="ts">
+  import baseLog from "$lib/log";
+  import { buildUniverse } from "$lib/numerical";
+  import { onMount } from "svelte";
+
+  const log = (...args: any[]) => baseLog("\t-", ...args);
+
+  // todo remove
+  log("\n\n\n\n\n");
+
+  const latex = ["y=-(\\frac{1}{2})x^2", "y=3x^2"];
+
+  let universe = buildUniverse(latex);
+
+  /**
+   * What a universe looks like, state:
+   *   list of:
+   *
+   *      - numbers
+   *      - [number?, number?] // for v fields
+   *
+   *  corresponding metadata like:
+   *      type, dep var
+   *
+   *  also, must call withEval(...)
+   */
+
+  log("universe:", universe);
+
+  export let canvas: HTMLCanvasElement;
+  export let ctx: CanvasRenderingContext2D;
+
+  type ChunkState = {
+    rowState: number[][];
+    gridState: number[][][];
+  };
+
+  const chunks: Map<string, ChunkState> = new Map();
+
+  const draw = () => {
+    const macroDivisions = 12;
+    const microDivisions = 120;
+    const chunkWidth = 5;
+    const microStep = chunkWidth / microDivisions;
+    const macroStep = chunkWidth / macroDivisions;
+
+    const w2sConv = (x: number, y: number): [number, number] => {
+      const s = 1 / 100;
+      return [x / s + 130, y / s + 240];
+    };
+
+    const metadata = universe.metadata;
+    const fieldIndices = metadata
+      .map((m, i) => (m.type === "field" ? i : -1))
+      .filter((i) => i != -1);
+    const curveIndices = metadata
+      .map((m, i) => (m.type === "curve" ? i : -1))
+      .filter((i) => i != -1);
+
+    const x0 = -2;
+    let microAxis: number[] = [];
+    for (let i = x0; i < chunkWidth; i += microStep) {
+      microAxis.push(i);
+    }
+
+    let macroAxis: number[] = [];
+    for (let i = x0; i < chunkWidth; i += macroStep) {
+      macroAxis.push(i);
+    }
+
+    const setChunk = (p: [number, number], state: ChunkState) => {
+      chunks.set(p.toString(), state);
+    };
+
+    const buildChunk = (chunkOrigin: [number, number]) => {
+      const x0 = chunkOrigin[0] * microDivisions;
+      const y0 = chunkOrigin[1] * microDivisions;
+
+      // curves
+      // todo vector field ivp
+
+      const rowState = new Array(microDivisions);
+
+      for (const i in microAxis) {
+        const offset = microAxis[i];
+        const state = new Array(curveIndices.length);
+        const x = x0 + offset;
+        universe.evalWith(x, 0);
+
+        for (const curveId in curveIndices) {
+          const uniId = curveIndices[curveId];
+          const out = universe.state[uniId];
+          state[curveId] = out;
+        }
+
+        rowState[i] = state;
+      }
+
+      // fields
+
+      const gridState = new Array(macroDivisions)
+        .fill(0)
+        .map(() => new Array(macroDivisions).fill(0));
+
+      for (const i in macroAxis) {
+        const x = x0 + macroAxis[i];
+        for (const j in macroAxis) {
+          const y = x0 + macroAxis[j];
+
+          // enable vector fields
+          universe.evalWith(x, y, true);
+          const state = new Array(fieldIndices.length);
+
+          for (const fieldId in fieldIndices) {
+            const uniId = fieldIndices[fieldId];
+            const out = universe.state[uniId] as [
+              number | undefined,
+              number | undefined,
+            ];
+            const [field, ivp] = out;
+            state[fieldId] = field;
+            gridState[i][j] = state;
+          }
+        }
+      }
+
+      const chunkState = { rowState, gridState };
+      setChunk(chunkOrigin, chunkState);
+      return chunkState;
+    };
+
+    const getOrBuildChunk = (p: [number, number]) => {
+      let chunk = chunks.get(p.toString());
+      if (!chunk) chunk = buildChunk(p);
+      return chunk;
+    };
+
+    const renderChunk = (chunkOrigin: [number, number]) => {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "blue";
+      const chunk = getOrBuildChunk(chunkOrigin);
+
+      // handling row state
+
+      const rowState = chunk.rowState;
+      const x0 = chunkOrigin[0] * microDivisions;
+
+      for (const curveId in curveIndices) {
+        log(rowState[0]);
+        // todo x dep var
+        const y0 = rowState[0][curveId];
+        if (y0 === undefined) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(...w2sConv(x0, y0));
+
+        for (const i in microAxis) {
+          const offset = microAxis[i];
+          let x = x0 + offset;
+          const y = rowState[i][curveId];
+          ctx.lineTo(...w2sConv(x, y));
+        }
+
+        ctx.stroke();
+      }
+
+      // handling grid state (vector fields)
+
+      const gridState = chunk.gridState;
+    };
+
+    renderChunk([0, 0]);
+  };
+
+  onMount(() => {
+    setTimeout(() => {
+      draw();
+    }, 1000);
+  });
+</script>

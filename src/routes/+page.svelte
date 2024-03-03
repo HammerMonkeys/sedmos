@@ -30,11 +30,10 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
-	let scale: number; // 11 horizontal squares
+	let scale = 17; // # of square units horizontally (higher = zoomed out)
 
 	onMount(() => {
 		const ctx = canvas.getContext("2d")!;
-		scale = canvas.width / 11;
 		drawGrid(ctx, vporigin);
 
 		function resizeCanvas(): void {
@@ -68,10 +67,10 @@
 	});
 
 	function cartToCanvas(coord: { x: number; y: number }) {
-		var scale = canvas.width / 11;
-		const xcenter = 6 * scale;
-		var ycount = ceil(canvas.height / scale);
-		const ycenter = (Math.round(ycount / 2) + 1) * scale;
+		var size = canvas.width / scale;
+		const xcenter = (scale / 2) * size;
+		var ycount = ceil(canvas.height / size);
+		const ycenter = (Math.round(ycount / 2) + 1) * size;
 		return {
 			x: coord.x * scale + vporigin.x + xcenter,
 			y: -coord.y * scale + vporigin.y + ycenter,
@@ -85,11 +84,11 @@
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
-		const origin = cartToCanvas({ x: 3, y: -1 });
+		const origin = cartToCanvas({ x: 6, y: -1 });
 		ctx.fillRect(origin.x, origin.y, 3, 3);
 
-		var spacing = canvas.width / 11;
-		const xcount = 11;
+		var spacing = canvas.width / scale;
+		const xcount = scale;
 		var ycount = ceil(canvas.height / spacing);
 		while (ycount >= 55) {
 			spacing *= 2;
@@ -107,7 +106,7 @@
 					? Math.floor(ycount / 2) + Math.floor(vporigin.y / spacing)
 					: Math.ceil(ycount / 2) + Math.ceil(vporigin.y / spacing),
 		};
-		console.log(tlcoord);
+		// console.log(tlcoord);
 
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 0.2;
@@ -204,7 +203,21 @@
 		</div>
 	</div>
 	<div id="graph" class="w-max bg-blue-100 flex-grow-[1]">
-		<canvas bind:this={canvas} id="canvas" class="w-full h-full overflow-clip">
+		<canvas
+			bind:this={canvas}
+			id="canvas"
+			class="w-full h-full overflow-clip"
+			tabindex="0"
+			on:keypress={(e) => {
+				if (e.key === "Z") {
+					scale = scale + 1;
+					latex_funcs = latex_funcs;
+				} else if (e.key === "z") {
+					scale = scale - 1;
+					latex_funcs = latex_funcs;
+				}
+			}}
+		>
 		</canvas>
 	</div>
 </body>

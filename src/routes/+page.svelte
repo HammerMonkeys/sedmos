@@ -59,22 +59,27 @@
     }
 
     try {
-      const chunkWidth = 5;
-      for (
-        let x = Math.floor(top_left[0] / chunkWidth);
-        x < bottom_right[0] / chunkWidth + 0.5;
-        x++
-      ) {
-        for (
-          let y = Math.floor(bottom_right[1] / chunkWidth);
-          y < top_left[1] / chunkWidth + 0.5;
-          y++
-        ) {
-          // todo /20 should  correspond to chunkWidth
+      for (let x = -5; x < 5; x++) {
+        for (let y = -3; y < 3; y++) {
           renderChunk([x, y]);
         }
       }
-    } catch {
+
+      // const chunkWidth = 5;
+      // for (
+      //   let x = Math.floor(top_left[0] / chunkWidth);
+      //   x < bottom_right[0] / chunkWidth + 0.5;
+      //   x++
+      // ) {
+      //   for (
+      //     let y = Math.floor(bottom_right[1] / chunkWidth);
+      //     y < top_left[1] / chunkWidth + 0.5;
+      //     y++
+      //   ) {
+      //     // todo /20 should  correspond to chunkWidth
+      //     renderChunk([x, y]);
+      //   }
+    } catch (err) {
       // pass
     }
   }

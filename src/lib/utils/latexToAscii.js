@@ -2,6 +2,10 @@
 // https://github.com/Heavenira/desmos2ascii/blob/main/desmos2ascii.js
 // This is a PASER for converting latex to ascii, it has little to do
 // with desmos specifically.
+// This parser has been slightly modified:
+//    - removed useless console.log
+//    - Latex 2^{a+b} -> 2^(a+b) not 2**{a+b}
+//    - y' -> y' not y*'
 
 let optimizeForParsing = true;
 
@@ -447,7 +451,8 @@ export default function convert(input) {
         // a bracket proceeds a digit OR letter
         (isDigit(i) && input[i + 1] == "(") ||
         // two letters next to each other
-        (isLetter(i) && isLetter(i + 1)) ||
+        // modified: EXCEPT for prime notation
+        (isLetter(i) && isLetter(i + 1) && input[i + 1] !== "'") ||
         // digit after OR before letter
         (isDigit(i) && isLetter(i + 1)) ||
         (isLetter(i) && isDigit(i + 1))
@@ -527,7 +532,7 @@ export default function convert(input) {
   // final replacements
   replace(/【/g, "(");
   if (optimizeForParsing) {
-    replace(/\^/g, "**");
+    // replace(/\^/g, "**");
     replace(/π/g, "pi");
   }
 

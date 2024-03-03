@@ -30,9 +30,11 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
+	let scale: number; // 11 horizontal squares
 
 	onMount(() => {
 		const ctx = canvas.getContext("2d")!;
+		scale = canvas.width / 11;
 		drawGrid(ctx, vporigin);
 
 		function resizeCanvas(): void {
@@ -65,6 +67,17 @@
 		});
 	});
 
+	function cartToCanvas(coord: { x: number; y: number }) {
+		var scale = canvas.width / 11;
+		const xcenter = 6 * scale;
+		var ycount = ceil(canvas.height / scale);
+		const ycenter = (Math.round(ycount / 2) + 1) * scale;
+		return {
+			x: coord.x * scale + vporigin.x + xcenter,
+			y: -coord.y * scale + vporigin.y + ycenter,
+		};
+	}
+
 	function drawGrid(
 		ctx: CanvasRenderingContext2D,
 		vporigin: { x: number; y: number },
@@ -72,35 +85,65 @@
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
-		var spacing = canvas.width / 20;
+		const origin = cartToCanvas({ x: 3, y: -1 });
+		ctx.fillRect(origin.x, origin.y, 3, 3);
+
+		var spacing = canvas.width / 11;
+		const xcount = 11;
 		var ycount = ceil(canvas.height / spacing);
 		while (ycount >= 55) {
 			spacing *= 2;
 			ycount = ceil(canvas.height / spacing);
 		}
 
-		console.log("VPO: " + vporigin.x + ", " + vporigin.y);
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
-		console.log("TL: " + tl.x + ", " + tl.y);
+		const tlcoord: { x: number; y: number } = {
+			x:
+				tl.x >= 0
+					? -Math.floor(xcount / 2) - Math.floor(vporigin.x / spacing)
+					: -Math.ceil(xcount / 2) - Math.ceil(vporigin.x / spacing) + 1,
+			y:
+				tl.y >= 0
+					? Math.floor(ycount / 2) + Math.floor(vporigin.y / spacing)
+					: Math.ceil(ycount / 2) + Math.ceil(vporigin.y / spacing),
+		};
+		console.log(tlcoord);
 
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 0.2;
-		for (let i = 0; i < 20; i++) {
+		for (let i = 0; i < xcount; i++) {
 			// draw vertical
-			if (i % 5 == 0) {
-				ctx.lineWidth = 0.5;
-				ctx.fillText(String(i), i * spacing, canvas.height / 2);
+			const line = tlcoord.x + i - 1;
+			// if (i % 5 == 0) {
+			// 	ctx.lineWidth = 0.5;
+			// 	ctx.fillText(String(i), i * spacing, canvas.height / 2);
+			// }
+			// i * spacing + tl.x adjusted for viewport origin is clsoe to 0
+
+			// console.log(tl.x);
+
+			if (line == 0) {
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = "red";
 			}
 			ctx.beginPath();
 			ctx.moveTo(i * spacing + tl.x, 0);
 			ctx.lineTo(i * spacing + tl.x, canvas.height);
 			ctx.stroke();
+			ctx.strokeStyle = "black";
 			ctx.lineWidth = 0.2;
 		}
 		for (let i = 0; i < ycount; i++) {
 			// draw horizontal
-			if (i % 5 == 0) {
-				ctx.lineWidth = 0.5;
+			const line = tlcoord.y - i + 1;
+
+			// if (i % 5 == 0) {
+			// 	ctx.lineWidth = 0.5;
+			// }
+
+			if (line == 0) {
+				ctx.lineWidth = 1;
+				ctx.strokeStyle = "red";
 			}
 			ctx.beginPath();
 			ctx.moveTo(0, tl.y + i * spacing);

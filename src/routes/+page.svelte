@@ -65,12 +65,29 @@
 		});
 	});
 
+	function cartToCanvas(coord: { x: number; y: number }) {
+		const canvasdims = { x: canvas.width, y: canvas.height };
+		var scale = canvas.width / 11;
+		const xcenter = 6 * scale;
+		var ycount = ceil(canvas.height / scale);
+		// const ycenter = (Math.floor(ycount / 2) + 1) * scale;
+		const ycenter = (ycount / 2 + 1) * scale;
+		const tl = { x: vporigin.x % scale, y: vporigin.y % scale };
+		return {
+			x: coord.x * scale + vporigin.x + xcenter,
+			y: -coord.y * scale + vporigin.y + ycenter,
+		};
+	}
+
 	function drawGrid(
 		ctx: CanvasRenderingContext2D,
 		vporigin: { x: number; y: number },
 	) {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
+
+		const origin = cartToCanvas({ x: 3, y: -1 });
+		ctx.fillRect(origin.x, origin.y, 3, 3);
 
 		var spacing = canvas.width / 11;
 		const xcount = 11;
@@ -80,10 +97,8 @@
 			ycount = ceil(canvas.height / spacing);
 		}
 
-		// console.log("VPO: " + vporigin.x + ", " + vporigin.y);
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
 		const tlcoord: { x: number; y: number } = {
-			// x: Math.ceil(-xcount / 2),
 			x:
 				tl.x >= 0
 					? -Math.floor(xcount / 2) - Math.floor(vporigin.x / spacing)

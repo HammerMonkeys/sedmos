@@ -9,7 +9,7 @@ export default {
 				primary: colors.neutral,
 				secondary: colors.stone,
 				bg: colors.slate,
-				accent: colors.lime,
+				accent: colors.rose,
 			},
 		},
 	},

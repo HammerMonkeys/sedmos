@@ -91,7 +91,7 @@
 			y:
 				tl.y >= 0
 					? Math.floor(ycount / 2) + Math.floor(vporigin.y / spacing)
-					: Math.ceil(ycount / 2) + Math.ceil(vporigin.y / spacing) - 1,
+					: Math.ceil(ycount / 2) + Math.ceil(vporigin.y / spacing),
 		};
 		console.log(tlcoord);
 

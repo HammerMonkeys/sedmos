@@ -70,8 +70,8 @@
 		var scale = canvas.width / 11;
 		const xcenter = 6 * scale;
 		var ycount = ceil(canvas.height / scale);
-		// const ycenter = (Math.floor(ycount / 2) + 1) * scale;
-		const ycenter = (ycount / 2 + 1) * scale;
+		const ycenter = (Math.round(ycount / 2) + 1) * scale;
+		// const ycenter = (ycount / 2 + 1) * scale;
 		const tl = { x: vporigin.x % scale, y: vporigin.y % scale };
 		return {
 			x: coord.x * scale + vporigin.x + xcenter,

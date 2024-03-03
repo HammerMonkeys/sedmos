@@ -254,20 +254,20 @@ function buildUniverse(inputData: string[]) {
   let vFields = metadata
     .filter((meta) => meta.type === "field")
     .map((_, i) => i);
-  let odeSolvers: Map<number, (scope: any) => number>;
+  let odeSolvers: Map<number, (scope: any) => number> = new Map();
 
   return {
     metadata,
     state, // overwritten with hot values after eval
 
     odeInitialConditions(y0: number, t0: number) {
-      odeSolvers = new Map();
+      odeSolvers.clear();
 
       for (const i of vFields) {
         const fn = compiled[i];
 
         let scopeLock: [any] = [{}];
-        const ode = (_: number, Y: number[]): number[] => {
+        const ode = (_: number, _2: number[]): number[] => {
           const scope = scopeLock[0];
           return [fn.evaluate(scope)];
         };

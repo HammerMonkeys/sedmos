@@ -34,9 +34,15 @@
   let scale = 15; // # of square units horizontally (higher = zoomed out)
   let ctx: CanvasRenderingContext2D;
 
+  // used in the foreground renderer
+  $: w2sConv = (x: number, y: number) => {
+    const canvasCoord = cartToCanvas({ x, y });
+    return [canvasCoord.x, canvasCoord.y];
+  };
+
   $: renderChunk =
     canvas != undefined && ctx != undefined
-      ? buildRenderer(canvas, ctx, latex_funcs)
+      ? buildRenderer(canvas, ctx, w2sConv, latex_funcs)
       : null;
 
   function renderAllChunks() {

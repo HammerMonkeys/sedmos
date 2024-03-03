@@ -17,6 +17,7 @@ let previousUniverse: Universe | undefined;
 export function buildRenderer(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
+  w2sConv: (x: number, y: number) => [number, number],
   latexInput: string[],
 ): (chunkOrigin: [number, number]) => void {
   // clone
@@ -27,14 +28,14 @@ export function buildRenderer(
     universe = buildUniverse(latexInput);
     previousUniverse = universe;
   } catch (err) {
-    if (err instanceof SyntaxError || err instanceof TypeError) {
-      if (!previousUniverse)
-        throw new Error("Parsing issue. Unable to define the universe.");
+    // if (err instanceof SyntaxError || err instanceof TypeError) {
+    if (!previousUniverse)
+      throw new Error("Parsing issue. Unable to define the universe.");
 
-      universe = previousUniverse!;
-    } else {
-      throw err;
-    }
+    universe = previousUniverse!;
+    // } else {
+    //   throw err;
+    // }
   }
 
   /**
@@ -57,10 +58,10 @@ export function buildRenderer(
 
   const chunks: Map<string, ChunkState> = new Map();
 
-  const w2sConv = (x: number, y: number): [number, number] => {
-    const s = (1 / 100) * 2;
-    return [x / s + 130, y / s + 240];
-  };
+  // const w2sConv = (x: number, y: number): [number, number] => {
+  //   const s = (1 / 100) * 2;
+  //   return [x / s + 130, y / s + 240];
+  // };
 
   const metadata = universe.metadata;
   const fieldIndices = metadata

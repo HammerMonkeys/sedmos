@@ -1,20 +1,48 @@
 <script lang="ts">
 	import { MathQuill } from "svelte-mathquill";
+	import { fly, slide } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+	import { flip } from "svelte/animate"; // import flip from svelte/animate
 
 	let latex_funcs: string[] = [""];
+
+	function dragStart(event: DragEvent, index: number) {
+		event.dataTransfer!.setData("text/plain", `${index}`);
+	}
+
+	function drop(event: DragEvent, index: number) {
+		event.preventDefault();
+		const draggedIndex: number = +event.dataTransfer!.getData("text/plain");
+		const temp = latex_funcs[index];
+		latex_funcs[index] = latex_funcs[draggedIndex];
+		latex_funcs[draggedIndex] = temp;
+		latex_funcs = [...latex_funcs];
+	}
+
+	function onDragOver(event: DragEvent, index: number) {
+		event.preventDefault();
+		console.log(event.target);
+	}
 </script>
 
 <body class="flex columns-2 h-screen w-screen bg-bg-900">
 	<div
 		id="functioncol"
-		class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20"
+		class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 	>
 		{#each latex_funcs as _, index (index)}
 			<div
 				id="functioncontainer{index}"
 				class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
+				draggable="true"
+				on:dragstart={(event) => dragStart(event, index)}
+				on:drop={(event) => drop(event, index)}
+				on:dragover={(event) => onDragOver(event, index)}
+				transition:slide={{ duration: 100, easing: cubicOut }}
+				animate:flip={{ duration: 300, easing: cubicOut }}
+				role="group"
 			>
-				<div class="w-12 text-xs pl-1 font-bold">
+				<div class="w-12 text-xs pl-1 font-bold cursor-move">
 					{index + 1}
 				</div>
 				<MathQuill
@@ -45,13 +73,22 @@
 				class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-t-[2] border-l-[0] border-b-[0] border-r-[0] flex cursor-pointer"
 			/>
 		</div>
+		<button
+			on:click={() => {
+				let tmp = latex_funcs[1];
+				latex_funcs.splice(1, 1);
+				latex_funcs.splice(1 + 1, 0, tmp);
+				latex_funcs = latex_funcs;
+				// latex_funcs[1] = latex_funcs[3];
+				// latex_funcs[3] = tmp;
+			}}
+			>Swap index 1 and 3
+		</button>
 	</div>
 	<div id="graph" class="w-max bg-blue-100 flex-grow-[1]">
 		<canvas id="canvas" class="w-max"> </canvas>
 	</div>
 </body>
-
-<!-- @appy border-accent-500; -->
 
 <style lang="postcss">
 	:global(.mq-focused) {

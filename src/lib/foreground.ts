@@ -1,5 +1,6 @@
 import baseLog from "$lib/log";
 import { buildUniverse } from "$lib/numerical";
+import type { Universe } from "$lib/numerical";
 
 const log = (...args: any[]) => baseLog("\t-", ...args);
 // todo remove
@@ -12,15 +13,33 @@ const microStep = chunkWidth / microDivisions;
 const macroStep = chunkWidth / macroDivisions;
 const vectorArrowSize = 10;
 
-export function buildRenderer(
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  latex: string[],
-) {
-  const exampleLatex = ["y=-(\\frac{1}{2})x^2", "y=3x^2", "y'=xy"];
-  latex ??= exampleLatex;
+function test(): (a: number) => void {
+  return (a) => 3;
+}
 
-  let universe = buildUniverse(latex);
+let previousUniverse: Universe | undefined;
+export function buildRenderer(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  latexInput: string[],
+): (chunkOrigin: [number, number]) => void {
+  // clone
+  latexInput = [...latexInput];
+
+  let universe: Universe;
+  try {
+    universe = buildUniverse(latexInput);
+    previousUniverse = universe;
+  } catch (err) {
+    if (err instanceof SyntaxError || err instanceof TypeError) {
+      if (!previousUniverse)
+        throw new Error("Parsing issue. Unable to define the universe.");
+
+      universe = previousUniverse!;
+    } else {
+      throw err;
+    }
+  }
 
   /**
    * What a universe looks like, state:
@@ -199,9 +218,9 @@ export function buildRenderer(
         }
       }
     }
-
-    return renderChunk;
   };
+
+  return renderChunk;
 }
 
 export default buildRenderer;

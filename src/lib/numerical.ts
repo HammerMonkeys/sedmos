@@ -18,9 +18,11 @@ interface Metadata {
 }
 
 // todo buff universe
-interface Universe {
-  globalScope: Map<string, any>;
-  setIndepVar(value: number): void;
+export interface Universe {
+  metadata: Metadata[];
+  state: Array<number | [number | undefined, number | undefined]>;
+  odeInitialConditions(y0: number, t0: number): void;
+  evalWith(indepVar: number, depVar: number, vectorFields?: boolean): this;
 }
 
 class CircularDependencyError extends Error {
@@ -182,6 +184,7 @@ export function buildUniverse(inputData: string[]) {
     const rootDep = depMap.get(root)!;
     const i = rootDep.expId;
     const childs = rootDep.dependencies;
+    log("numerical", root, childs);
 
     for (const child of childs) {
       if (["x", "y", "t"].includes(child)) {

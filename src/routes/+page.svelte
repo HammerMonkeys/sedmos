@@ -39,7 +39,7 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
-	let scale = 15; // # of square units horizontally (higher = zoomed out)
+	let scale = 20; // # of square units horizontally (higher = zoomed out)
 	let ctx: CanvasRenderingContext2D;
 
 	// used in the foreground renderer

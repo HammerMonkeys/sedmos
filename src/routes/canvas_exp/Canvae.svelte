@@ -8,7 +8,7 @@
   // todo remove
   log("\n\n\n\n\n");
 
-  const latex = ["y=-(\\frac{1}{2})x^2", "y=3x^2"];
+  const latex = ["y=-(\\frac{1}{2})x^2", "y=3x^2", "y'=xy"];
 
   let universe = buildUniverse(latex);
 
@@ -45,7 +45,7 @@
     const macroStep = chunkWidth / macroDivisions;
 
     const w2sConv = (x: number, y: number): [number, number] => {
-      const s = 1 / 100;
+      const s = (1 / 100) * 2;
       return [x / s + 130, y / s + 240];
     };
 
@@ -59,12 +59,12 @@
 
     const x0 = -2;
     let microAxis: number[] = [];
-    for (let i = x0; i < chunkWidth; i += microStep) {
+    for (let i = x0; i < x0 + chunkWidth; i += microStep) {
       microAxis.push(i);
     }
 
     let macroAxis: number[] = [];
-    for (let i = x0; i < chunkWidth; i += macroStep) {
+    for (let i = x0; i < x0 + chunkWidth; i += macroStep) {
       macroAxis.push(i);
     }
 
@@ -73,8 +73,8 @@
     };
 
     const buildChunk = (chunkOrigin: [number, number]) => {
-      const x0 = chunkOrigin[0] * microDivisions;
-      const y0 = chunkOrigin[1] * microDivisions;
+      const x0 = chunkOrigin[0] * chunkWidth;
+      const y0 = chunkOrigin[1] * chunkWidth;
 
       // curves
       // todo vector field ivp
@@ -105,7 +105,7 @@
       for (const i in macroAxis) {
         const x = x0 + macroAxis[i];
         for (const j in macroAxis) {
-          const y = x0 + macroAxis[j];
+          const y = y0 + macroAxis[j];
 
           // enable vector fields
           universe.evalWith(x, y, true);
@@ -143,10 +143,9 @@
       // handling row state
 
       const rowState = chunk.rowState;
-      const x0 = chunkOrigin[0] * microDivisions;
+      const x0 = chunkOrigin[0] * chunkWidth;
 
       for (const curveId in curveIndices) {
-        log(rowState[0]);
         // todo x dep var
         const y0 = rowState[0][curveId];
         if (y0 === undefined) continue;
@@ -167,9 +166,32 @@
       // handling grid state (vector fields)
 
       const gridState = chunk.gridState;
+      const y0 = chunkOrigin[1] * chunkWidth;
+
+      for (const fieldId in fieldIndices) {
+        // todo set field color here
+        ctx.strokeStyle = "red";
+
+        for (const i in macroAxis) {
+          const x = x0 + macroAxis[i];
+          for (const j in macroAxis) {
+            const y = y0 + macroAxis[j];
+            const state = gridState[i][j];
+
+            const uniId = state[fieldId];
+            if (uniId === undefined) continue;
+
+            ctx.beginPath();
+            ctx.ellipse(...w2sConv(x, y), 2, 2, 0, 0, 2 * Math.PI);
+            ctx.stroke();
+          }
+        }
+      }
     };
 
     renderChunk([0, 0]);
+    renderChunk([1, 0]);
+    renderChunk([-1, 0]);
   };
 
   onMount(() => {

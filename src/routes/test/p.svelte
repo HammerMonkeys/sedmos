@@ -5,9 +5,18 @@
 	import { flip } from "svelte/animate"; // import flip from svelte/animate
 	import { onMount } from "svelte";
 	import { ceil, number } from "mathjs";
-	import { abs } from "mathjs";
+	import buildRenderer from "../lib/foreground";
+	import log from "$lib/log";
 
 	let latex_funcs: string[] = [""];
+
+	$: {
+		let top_left = tlbl[0];
+		let bottom_right = tlbl ? tlbl[1] : null;
+		console.log(top_left);
+		console.log(bottom_right);
+	}
+	let tlbl = [];
 
 	function dragStart(event: DragEvent, index: number) {
 		event.dataTransfer!.setData("text/plain", `${index}`);
@@ -30,16 +39,38 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
-	let scale = 15; // # of square units horizontally (higher = zoomed out)
+	let scale = 20; // # of square units horizontally (higher = zoomed out)
+	let ctx: CanvasRenderingContext2D;
+
+	// used in the foreground renderer
+	$: w2sConv = (x: number, y: number) => {
+		const canvasCoord = cartToCanvas({ x, y });
+		return [canvasCoord.x, canvasCoord.y];
+	};
+
+	$: renderChunk =
+		canvas != undefined && ctx != undefined
+			? buildRenderer(canvas, ctx, w2sConv, latex_funcs)
+			: null;
+
+	function renderAllChunks() {
+		if (!renderChunk) {
+			return;
+		}
+
+		renderChunk([0, 0]);
+		renderChunk([1, 0]);
+		renderChunk([1, -1]);
+	}
 
 	onMount(() => {
-		const ctx = canvas.getContext("2d")!;
-		drawGrid(ctx, vporigin);
+		ctx = canvas.getContext("2d")!;
+		drawGrid();
 
 		function resizeCanvas(): void {
 			canvas.width = canvas.clientWidth;
 			canvas.height = canvas.clientHeight;
-			drawGrid(ctx, vporigin);
+			drawGrid();
 		}
 
 		new ResizeObserver(resizeCanvas).observe(canvas);
@@ -57,7 +88,7 @@
 				vporigin.x += event.clientX - previousPoint.x;
 				vporigin.y += event.clientY - previousPoint.y;
 				previousPoint = { x: event.clientX, y: event.clientY };
-				drawGrid(ctx, vporigin);
+				drawGrid();
 			}
 		});
 
@@ -77,10 +108,29 @@
 		};
 	}
 
-	function drawGrid(
-		ctx: CanvasRenderingContext2D,
-		vporigin: { x: number; y: number },
-	) {
+	function getCenterCart() {
+		return [vporigin.x / scale, vporigin.y / scale];
+	}
+
+	// function TlBl(canvasX: number, canvasY, width: number, height: number) {
+	function TlBl(width: number, height: number) {
+		let cartCent = getCenterCart();
+
+		let yCart = height / 2 / scale;
+		let xCart = width / 2 / scale;
+		console.log("TLLLLCART: " + yCart);
+
+		const tl = [cartCent.at(0) - xCart, cartCent.at(1) + yCart];
+		const bl = [cartCent.at(0) + xCart, cartCent.at(1) - yCart];
+		console.log("TLLLL: " + cartCent.at(0));
+
+		return [tl, bl];
+	}
+
+	function drawGrid() {
+		if (!ctx) return;
+
+		var squaresize = canvas.width / scale;
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
@@ -94,6 +144,9 @@
 			spacing *= 2;
 			ycount = ceil(canvas.height / spacing);
 		}
+
+		tlbl = TlBl(canvas.width, canvas.height);
+		console.log(tlbl);
 
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
 		const tlcoord: { x: number; y: number } = {
@@ -116,7 +169,7 @@
 
 			if (line == 0) {
 				ctx.lineWidth = 1;
-				ctx.strokeStyle = "red";
+				ctx.strokeStyle = "black";
 			}
 			ctx.beginPath();
 			ctx.moveTo(i * spacing + tl.x, 0);
@@ -131,7 +184,7 @@
 
 			if (line == 0) {
 				ctx.lineWidth = 1;
-				ctx.strokeStyle = "red";
+				ctx.strokeStyle = "black";
 			}
 			ctx.beginPath();
 			ctx.moveTo(0, tl.y + i * spacing);
@@ -139,6 +192,13 @@
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}
+
+		renderAllChunks();
+	}
+
+	$: if (latex_funcs) {
+		drawGrid();
+		renderAllChunks();
 	}
 </script>
 
@@ -195,7 +255,7 @@
 		<canvas
 			bind:this={canvas}
 			id="canvas"
-			class="w-full h-full overflow-clip"
+			class="w-full h-full overflow-clip bg-bg-200"
 			tabindex="0"
 			on:keypress={(e) => {
 				if (e.key === "Z") {

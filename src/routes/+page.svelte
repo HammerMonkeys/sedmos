@@ -30,9 +30,11 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
+	let scale: number; // 11 horizontal squares
 
 	onMount(() => {
 		const ctx = canvas.getContext("2d")!;
+		scale = canvas.width / 11;
 		drawGrid(ctx, vporigin);
 
 		function resizeCanvas(): void {
@@ -66,13 +68,10 @@
 	});
 
 	function cartToCanvas(coord: { x: number; y: number }) {
-		const canvasdims = { x: canvas.width, y: canvas.height };
 		var scale = canvas.width / 11;
 		const xcenter = 6 * scale;
 		var ycount = ceil(canvas.height / scale);
 		const ycenter = (Math.round(ycount / 2) + 1) * scale;
-		// const ycenter = (ycount / 2 + 1) * scale;
-		const tl = { x: vporigin.x % scale, y: vporigin.y % scale };
 		return {
 			x: coord.x * scale + vporigin.x + xcenter,
 			y: -coord.y * scale + vporigin.y + ycenter,

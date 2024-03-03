@@ -16,6 +16,7 @@ interface Metadata {
   hot: boolean; // hot means it needs re-eval per xy coordinate
 }
 
+// todo buff universe
 interface Universe {
   globalScope: Map<string, any>;
   setIndepVar(value: number): void;
@@ -34,11 +35,20 @@ class CircularDependencyError extends Error {
   }
 }
 
-function handle() {
+function extendMathJS() {
+  const isAlphaOriginal = math.parse.isAlpha;
+  math.parse.isAlpha = function (c, cPrev, cNext) {
+    return isAlphaOriginal(c, cPrev, cNext) || c === "'";
+  };
+}
+extendMathJS();
+
+function buildUniverse(inputData: string[]) {
   // TODO remove
   log("\n\n\n\n");
 
-  const inputData = [
+  // todo remove
+  inputData = [
     "a=2",
     "b=12",
     "c=18",
@@ -54,10 +64,12 @@ function handle() {
     "h=g+1",
     "y=4",
     // v fields
-    // "y'=x^2", // todo impl
+    "y'=x^2",
   ];
 
   const asciiMath = inputData.map((input) => latexToAscii(input));
+  log(asciiMath);
+
   const trees = asciiMath.map((ascii) => math.parse(ascii));
   const formulaeIndices: number[] = [];
 
@@ -285,7 +297,7 @@ function dependencyAnalysis(depMap: Map<string, Dependencies>): string[] {
   return Array.from(depMap.keys()).sort((a, b) => search(a) - search(b));
 }
 
-let uni = handle();
+let uni = buildUniverse([]);
 log("State:", JSON.stringify(uni.state, null, 2));
 
 log("Eval with", 3, 2);

@@ -11,7 +11,7 @@
 	>
 		{#each latex_funcs as _, index (index)}
 			<div
-				id="functioncontainer"
+				id="functioncontainer{index}"
 				class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
 			>
 				<div class="w-12 text-xs pl-1 font-bold">
@@ -20,14 +20,17 @@
 				<MathQuill
 					class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-b-[1] focus:border-accent-500 active:border-accent-500 border-secondary-500 flex"
 					bind:latex={latex_funcs[index]}
+					autofocus
 				/>
 			</div>
 		{/each}
 		<div
 			role="button"
 			id="functioncontainer"
-			class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900 bg-gradient-to-b from-secondary-500 from-1% to-bg-900 to-70%"
-			on:click={() => (latex_funcs = [...latex_funcs, ""])}
+			class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 bg-gradient-to-b from-secondary-500 from-1% to-bg-900 to-70%"
+			on:click={() => {
+				latex_funcs = [...latex_funcs, ""];
+			}}
 			on:keypress={(e) => {
 				if (e.key === "Enter") {
 					latex_funcs = [...latex_funcs, ""];
@@ -39,7 +42,7 @@
 				{latex_funcs.length + 1}
 			</div>
 			<MathQuill
-				class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-l-[0] border-b-[0] focus:border-accent-500 active:border-accent-500 border-secondary-500 flex"
+				class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-t-[2] border-l-[0] border-b-[0] border-r-[0] flex cursor-pointer"
 			/>
 		</div>
 	</div>

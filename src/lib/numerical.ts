@@ -102,6 +102,7 @@ export function buildUniverse(inputData: string[]) {
   for (let i = 0; i < trees.length; i++) {
     const root = trees[i];
     let nodeDeps: string[] = [];
+    log(root);
 
     // some deps need to be ignored because f(x)=ax does not depend on x
     let ignoreDeps: string[] = [];
@@ -178,13 +179,18 @@ export function buildUniverse(inputData: string[]) {
   log("Dependency Priority:", priority);
 
   // an object is hot if it, or its dependencies, depend on x,y, or t.
+  // todo temporarily making vfields always hot
 
   const hotMap: boolean[] = new Array(trees.length).fill(false);
   for (const root of priority) {
     const rootDep = depMap.get(root)!;
     const i = rootDep.expId;
     const childs = rootDep.dependencies;
-    log("numerical", root, childs);
+
+    if (visType[i] === "field") {
+      hotMap[i] = true;
+      break;
+    }
 
     for (const child of childs) {
       if (["x", "y", "t"].includes(child)) {

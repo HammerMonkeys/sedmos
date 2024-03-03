@@ -6,9 +6,9 @@ const log = (...args: any[]) => baseLog("\t-", ...args);
 // todo remove
 log("\n\n\n\n\n");
 
-const macroDivisions = 6;
-const microDivisions = 120;
 const chunkWidth = 5;
+const macroDivisions = 5;
+const microDivisions = 120;
 const microStep = chunkWidth / microDivisions;
 const macroStep = chunkWidth / macroDivisions;
 const vectorArrowSize = 10;
@@ -37,6 +37,8 @@ export function buildRenderer(
     //   throw err;
     // }
   }
+
+  log("universe", universe);
 
   /**
    * What a universe looks like, state:
@@ -71,7 +73,7 @@ export function buildRenderer(
     .map((m, i) => (m.type === "curve" ? i : -1))
     .filter((i) => i != -1);
 
-  const x0 = -2;
+  const x0 = -1;
   let microAxis: number[] = [];
   for (let i = x0; i < x0 + chunkWidth; i += microStep) {
     microAxis.push(i);
@@ -127,10 +129,16 @@ export function buildRenderer(
 
         for (const fieldId in fieldIndices) {
           const uniId = fieldIndices[fieldId];
-          const out = universe.state[uniId] as [
-            number | undefined,
-            number | undefined,
-          ];
+
+          let out = universe.state[uniId];
+
+          // confirm out is iterable
+          if (!out) continue;
+          if (typeof out === "number") continue;
+          if (out.length != 2) continue;
+
+          out = out as [number | undefined, number | undefined];
+
           const [field, ivp] = out;
           state[fieldId] = field;
           gridState[i][j] = state;
@@ -165,7 +173,7 @@ export function buildRenderer(
       if (y0 === undefined) continue;
 
       ctx.beginPath();
-      ctx.moveTo(...w2sConv(x0, y0));
+      ctx.moveTo(...w2sConv(x0 + microAxis[0], y0));
 
       for (const i in microAxis) {
         const offset = microAxis[i];

@@ -30,7 +30,7 @@
 	let vporigin = { x: 0, y: 0 };
 	let dragging = false;
 	let previousPoint: { x: number; y: number } = { x: 0, y: 0 };
-	let scale = 17; // # of square units horizontally (higher = zoomed out)
+	let scale = 15; // # of square units horizontally (higher = zoomed out)
 
 	onMount(() => {
 		const ctx = canvas.getContext("2d")!;
@@ -67,13 +67,13 @@
 	});
 
 	function cartToCanvas(coord: { x: number; y: number }) {
-		var size = canvas.width / scale;
-		const xcenter = (scale / 2) * size;
-		var ycount = ceil(canvas.height / size);
-		const ycenter = (Math.round(ycount / 2) + 1) * size;
+		var squaresize = canvas.width / scale;
+		const xcenter = Math.round(scale / 2) * squaresize;
+		var ycount = ceil(canvas.height / squaresize);
+		const ycenter = (Math.round(ycount / 2) + 1) * squaresize;
 		return {
-			x: coord.x * scale + vporigin.x + xcenter,
-			y: -coord.y * scale + vporigin.y + ycenter,
+			x: coord.x * squaresize + vporigin.x + xcenter,
+			y: -coord.y * squaresize + vporigin.y + ycenter,
 		};
 	}
 
@@ -84,7 +84,7 @@
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
-		const origin = cartToCanvas({ x: 6, y: -1 });
+		const origin = cartToCanvas({ x: 2, y: -1 });
 		ctx.fillRect(origin.x, origin.y, 3, 3);
 
 		var spacing = canvas.width / scale;

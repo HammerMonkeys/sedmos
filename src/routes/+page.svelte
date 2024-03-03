@@ -4,6 +4,7 @@
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate"; // import flip from svelte/animate
 	import { onMount } from "svelte";
+	import { ceil } from "mathjs";
 
 	let latex_funcs: string[] = [""];
 
@@ -45,18 +46,20 @@
 	function drawGrid(ctx: CanvasRenderingContext2D) {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
+		const spacing = canvas.width / 20;
+		const ycount = ceil(canvas.height / spacing);
 		ctx.strokeStyle = "black";
 		ctx.lineWidth = 0.5;
-		for (let i = 0; i < 10; i++) {
+		for (let i = 0; i < 20; i++) {
 			ctx.beginPath();
-			ctx.moveTo(i * 50, 0);
-			ctx.lineTo(i * 50, 500);
+			ctx.moveTo(i * spacing, 0);
+			ctx.lineTo(i * spacing, canvas.height);
 			ctx.stroke();
 		}
-		for (let i = 0; i < 10; i++) {
+		for (let i = 0; i < ycount; i++) {
 			ctx.beginPath();
-			ctx.moveTo(0, i * 50);
-			ctx.lineTo(500, i * 50);
+			ctx.moveTo(0, i * spacing);
+			ctx.lineTo(canvas.width, i * spacing);
 			ctx.stroke();
 		}
 	}

@@ -84,7 +84,7 @@
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
-		const origin = cartToCanvas({ x: 2, y: -1 });
+		const origin = cartToCanvas({ x: 3, y: -1 });
 		ctx.fillRect(origin.x, origin.y, 3, 3);
 
 		var spacing = canvas.width / scale;
@@ -113,13 +113,6 @@
 		for (let i = 0; i < xcount; i++) {
 			// draw vertical
 			const line = tlcoord.x + i - 1;
-			// if (i % 5 == 0) {
-			// 	ctx.lineWidth = 0.5;
-			// 	ctx.fillText(String(i), i * spacing, canvas.height / 2);
-			// }
-			// i * spacing + tl.x adjusted for viewport origin is clsoe to 0
-
-			// console.log(tl.x);
 
 			if (line == 0) {
 				ctx.lineWidth = 1;
@@ -135,10 +128,6 @@
 		for (let i = 0; i < ycount; i++) {
 			// draw horizontal
 			const line = tlcoord.y - i + 1;
-
-			// if (i % 5 == 0) {
-			// 	ctx.lineWidth = 0.5;
-			// }
 
 			if (line == 0) {
 				ctx.lineWidth = 1;

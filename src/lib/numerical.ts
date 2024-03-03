@@ -68,8 +68,6 @@ function buildUniverse(inputData: string[]) {
   ];
 
   const asciiMath = inputData.map((input) => latexToAscii(input));
-  log(asciiMath);
-
   const trees = asciiMath.map((ascii) => math.parse(ascii));
   const formulaeIndices: number[] = [];
 

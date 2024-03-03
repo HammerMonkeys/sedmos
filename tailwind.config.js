@@ -7,9 +7,10 @@ export default {
 		extend: {
 			colors: {
 				primary: colors.neutral,
-				secondary: colors.stone,
-				bg: colors.slate,
-				accent: colors.rose,
+				secondary: colors.slate,
+				// bg: colors.trueGray,
+				bg: colors.gray,
+				accent: colors.cyan,
 			},
 		},
 	},

@@ -108,27 +108,26 @@
 		};
 	}
 
-  function getCenterCart() {
-     return [vporigin.x / scale, vporigin.y / scale];
+	function getCenterCart() {
+		return [vporigin.x / scale, vporigin.y / scale];
 	}
 
 	// function TlBl(canvasX: number, canvasY, width: number, height: number) {
 	function TlBl(width: number, height: number) {
 		let cartCent = getCenterCart();
 
-		let yCart = (height/2) / scale;
-		let xCart = (width/2) / scale;
-		console.log("TLLLLCART: " + yCart)
+		let yCart = height / 2 / scale;
+		let xCart = width / 2 / scale;
+		console.log("TLLLLCART: " + yCart);
 
-		const tl = [cartCent.at(0) - xCart, cartCent.at(1) + yCart]
-		const bl = [cartCent.at(0) + xCart, cartCent.at(1) - yCart]
-		console.log("TLLLL: " + cartCent.at(0))
+		const tl = [cartCent.at(0) - xCart, cartCent.at(1) + yCart];
+		const bl = [cartCent.at(0) + xCart, cartCent.at(1) - yCart];
+		console.log("TLLLL: " + cartCent.at(0));
 
-		return [tl, bl]
+		return [tl, bl];
 	}
 
 	function drawGrid() {
-
 		if (!ctx) return;
 
 		var squaresize = canvas.width / scale;
@@ -147,7 +146,7 @@
 		}
 
 		tlbl = TlBl(canvas.width, canvas.height);
-		console.log(tlbl)
+		console.log(tlbl);
 
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
 		const tlcoord: { x: number; y: number } = {
@@ -170,7 +169,7 @@
 
 			if (line == 0) {
 				ctx.lineWidth = 1;
-				ctx.strokeStyle = "red";
+				ctx.strokeStyle = "black";
 			}
 			ctx.beginPath();
 			ctx.moveTo(i * spacing + tl.x, 0);
@@ -185,7 +184,7 @@
 
 			if (line == 0) {
 				ctx.lineWidth = 1;
-				ctx.strokeStyle = "red";
+				ctx.strokeStyle = "black";
 			}
 			ctx.beginPath();
 			ctx.moveTo(0, tl.y + i * spacing);
@@ -256,7 +255,7 @@
 		<canvas
 			bind:this={canvas}
 			id="canvas"
-			class="w-full h-full overflow-clip"
+			class="w-full h-full overflow-clip bg-bg-200"
 			tabindex="0"
 			on:keypress={(e) => {
 				if (e.key === "Z") {

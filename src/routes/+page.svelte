@@ -3,6 +3,7 @@
 	import { fly, slide } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate"; // import flip from svelte/animate
+	import { onMount } from "svelte";
 
 	let latex_funcs: string[] = [""];
 
@@ -19,9 +20,45 @@
 		latex_funcs = [...latex_funcs];
 	}
 
-	function onDragOver(event: DragEvent, index: number) {
+	function onDragOver(event: DragEvent) {
 		event.preventDefault();
-		console.log(event.target);
+	}
+
+	let canvas: HTMLCanvasElement;
+
+	onMount(() => {
+		const ctx = canvas.getContext("2d")!;
+		drawGrid(ctx);
+
+		function resizeCanvas(): void {
+			canvas.width = canvas.clientWidth;
+			canvas.height = canvas.clientHeight;
+			drawGrid(ctx);
+		}
+
+		new ResizeObserver(resizeCanvas).observe(canvas);
+
+		window.onresize = resizeCanvas;
+		resizeCanvas();
+	});
+
+	function drawGrid(ctx: CanvasRenderingContext2D) {
+		canvas.width = canvas.clientWidth;
+		canvas.height = canvas.clientHeight;
+		ctx.strokeStyle = "black";
+		ctx.lineWidth = 0.5;
+		for (let i = 0; i < 10; i++) {
+			ctx.beginPath();
+			ctx.moveTo(i * 50, 0);
+			ctx.lineTo(i * 50, 500);
+			ctx.stroke();
+		}
+		for (let i = 0; i < 10; i++) {
+			ctx.beginPath();
+			ctx.moveTo(0, i * 50);
+			ctx.lineTo(500, i * 50);
+			ctx.stroke();
+		}
 	}
 </script>
 
@@ -37,7 +74,7 @@
 				draggable="true"
 				on:dragstart={(event) => dragStart(event, index)}
 				on:drop={(event) => drop(event, index)}
-				on:dragover={(event) => onDragOver(event, index)}
+				on:dragover={(event) => onDragOver(event)}
 				transition:slide={{ duration: 100, easing: cubicOut }}
 				animate:flip={{ duration: 300, easing: cubicOut }}
 				role="group"
@@ -73,20 +110,10 @@
 				class="bg-bg-900 text-primary-100 w-full p-4 min-h-16 border-t-[2] border-l-[0] border-b-[0] border-r-[0] flex cursor-pointer"
 			/>
 		</div>
-		<button
-			on:click={() => {
-				let tmp = latex_funcs[1];
-				latex_funcs.splice(1, 1);
-				latex_funcs.splice(1 + 1, 0, tmp);
-				latex_funcs = latex_funcs;
-				// latex_funcs[1] = latex_funcs[3];
-				// latex_funcs[3] = tmp;
-			}}
-			>Swap index 1 and 3
-		</button>
 	</div>
 	<div id="graph" class="w-max bg-blue-100 flex-grow-[1]">
-		<canvas id="canvas" class="w-max"> </canvas>
+		<canvas bind:this={canvas} id="canvas" class="w-full h-full overflow-clip">
+		</canvas>
 	</div>
 </body>
 

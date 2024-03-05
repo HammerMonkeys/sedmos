@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { MathQuill } from "svelte-mathquill";
-	// import { slide } from "svelte/transition";
+	import { slide } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate";
 	import { GraphFunction } from "$lib/graphfunction";
@@ -31,9 +31,8 @@
 	class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 >
 	<!--TODO: Make the key for the each block rely on a unique identifier key from the GraphFunction class-->
-	{#each graph_funcs as _, index (index)}
+	{#each graph_funcs as func, index (func.key)}
 		<!--TODO: Add back in this transition, once I figure out the flip shenanigans -->
-		<!-- transition:slide={{ duration: 100, easing: cubicOut }} -->
 		<div
 			id="functioncontainer{index}"
 			class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
@@ -41,7 +40,8 @@
 			on:dragstart={(event) => dragStart(event, index)}
 			on:drop={(event) => drop(event, index)}
 			on:dragover={(event) => onDragOver(event)}
-			animate:flip={{ duration: 300, easing: cubicOut }}
+			animate:flip={{ duration: 200, easing: cubicOut }}
+			transition:slide={{ duration: 100, easing: cubicOut }}
 			role="group"
 		>
 			<div class="w-12 text-xs pl-1 font-bold cursor-move">

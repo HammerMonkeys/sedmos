@@ -15,10 +15,10 @@
 	function drop(event: DragEvent, index: number) {
 		event.preventDefault();
 		const draggedIndex: number = +event.dataTransfer!.getData("text/plain");
-		const temp = [index];
+		const temp = graph_funcs[index];
 		graph_funcs[index] = graph_funcs[draggedIndex];
-		// graph_funcs[draggedIndex] = temp;
-		// graph_funcs = [...graph_funcs];
+		graph_funcs[draggedIndex] = temp;
+		graph_funcs = [...graph_funcs];
 	}
 
 	function onDragOver(event: DragEvent) {

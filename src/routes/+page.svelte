@@ -8,12 +8,14 @@
 	import buildRenderer from "../lib/foreground";
 	import log from "$lib/log";
 
+	//TODO: Make latex funcs store an array of objects with attributes such as "visible", "color", "latex string", etc.
 	let latex_funcs: string[] = [""];
 
 	let tlbl: [number, number][] = [];
 	$: top_left = tlbl ? tlbl[0] : null;
 	$: bottom_right = tlbl ? tlbl[1] : null;
 
+	//TODO: Rethink the drag algorithm eniterly for the grid, as well as the gridline generation
 	function dragStart(event: DragEvent, index: number) {
 		event.dataTransfer!.setData("text/plain", `${index}`);
 	}
@@ -228,6 +230,7 @@
 		class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 	>
 		{#each latex_funcs as _, index (index)}
+			<!--TODO: Make these boxes an outside component probably	 -->
 			<div
 				id="functioncontainer{index}"
 				class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
@@ -291,6 +294,7 @@
 	</div>
 </body>
 
+<!-- TODO: Figure out how to properly style the mathquil cursor -->
 <style lang="postcss">
 	:global(.mq-focused) {
 		box-shadow: none !important;

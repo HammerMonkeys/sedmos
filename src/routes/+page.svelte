@@ -4,8 +4,7 @@
 	import buildRenderer from "../lib/foreground";
 	import Sidebar from "$lib/components/Sidebar.svelte";
 	import { GraphFunction } from "$lib/graphfunction";
-
-	import log from "$lib/log";
+	// import log from "$lib/log";
 
 	// let latex_funcs: string[] = [""];
 	let graph_funcs: GraphFunction[] = [new GraphFunction()];

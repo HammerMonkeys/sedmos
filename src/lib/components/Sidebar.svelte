@@ -5,7 +5,6 @@
 	import { flip } from "svelte/animate";
 	import { GraphFunction } from "$lib/graphfunction";
 
-	// export let graph_funcs: string[] = [""];
 	export let graph_funcs: GraphFunction[] = [new GraphFunction()];
 
 	// TODO: (painful) make an animation for the drag and drop which locks the "y" (vertical) axis
@@ -31,7 +30,9 @@
 	id="sidebar"
 	class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 >
+	<!--TODO: Make the key for the each block rely on a unique identifier key from the GraphFunction class-->
 	{#each graph_funcs as _, index (index)}
+		<!--TODO: Add back in this transition, once I figure out the flip shenanigans -->
 		<!-- transition:slide={{ duration: 100, easing: cubicOut }} -->
 		<div
 			id="functioncontainer{index}"
@@ -71,12 +72,10 @@
 		class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 bg-gradient-to-b from-secondary-500 from-1% to-bg-900 to-70%"
 		on:click={() => {
 			graph_funcs = [...graph_funcs, new GraphFunction()];
-			// graph_funcs = [...graph_funcs, new GraphFunction()];
 		}}
 		on:keypress={(e) => {
 			if (e.key === "Enter") {
 				graph_funcs = [...graph_funcs, new GraphFunction()];
-				// graph_funcs = [...graph_funcs, new GraphFunction()];
 			}
 		}}
 		tabindex="0"

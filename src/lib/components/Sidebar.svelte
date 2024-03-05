@@ -3,9 +3,13 @@
 	import { slide } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate";
+	import { SidebarElement } from "$lib/latexfunction";
+
+	// const test = new LatexFunction({ expression: "x^2" });
 
 	export let latex_funcs: string[] = [""];
 
+	// TODO: (painful) make an animation for the drag and drop which locks the "y" (vertical) axis
 	function dragStart(event: DragEvent, index: number) {
 		event.dataTransfer!.setData("text/plain", `${index}`);
 	}
@@ -25,10 +29,11 @@
 </script>
 
 <div
-	id="functioncol"
+	id="sidebar"
 	class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 >
 	{#each latex_funcs as _, index (index)}
+		<!-- transition:slide={{ duration: 100, easing: cubicOut }} -->
 		<div
 			id="functioncontainer{index}"
 			class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
@@ -36,7 +41,6 @@
 			on:dragstart={(event) => dragStart(event, index)}
 			on:drop={(event) => drop(event, index)}
 			on:dragover={(event) => onDragOver(event)}
-			transition:slide={{ duration: 100, easing: cubicOut }}
 			animate:flip={{ duration: 300, easing: cubicOut }}
 			role="group"
 		>
@@ -48,11 +52,22 @@
 				bind:latex={latex_funcs[index]}
 				autofocus
 			/>
+			<button
+				on:click={() => {
+					if (index === 0) return;
+					const temp = latex_funcs[index];
+					latex_funcs[index] = latex_funcs[index - 1];
+					latex_funcs[index - 1] = temp;
+					latex_funcs = latex_funcs;
+				}}
+			>
+				flip
+			</button>
 		</div>
 	{/each}
 	<div
 		role="button"
-		id="functioncontainer"
+		id="functionAdd"
 		class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 bg-gradient-to-b from-secondary-500 from-1% to-bg-900 to-70%"
 		on:click={() => {
 			latex_funcs = [...latex_funcs, ""];

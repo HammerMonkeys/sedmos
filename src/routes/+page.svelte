@@ -3,10 +3,18 @@
 	import { ceil, number } from "mathjs";
 	import buildRenderer from "../lib/foreground";
 	import Sidebar from "$lib/components/Sidebar.svelte";
+	import { GraphFunction } from "$lib/graphfunction";
 
 	import log from "$lib/log";
 
-	let latex_funcs: string[] = [""];
+	// let latex_funcs: string[] = [""];
+	let graph_funcs: GraphFunction[] = [new GraphFunction()];
+	let latex_funcs: string[] = graph_funcs.map((f) => f.latex);
+
+	$: {
+		latex_funcs = graph_funcs.map((f) => f.latex);
+		console.log(latex_funcs);
+	}
 
 	let tlbl: [number, number][] = [];
 	$: top_left = tlbl ? tlbl[0] : null;
@@ -121,11 +129,9 @@
 
 		let yCart = height / 2 / scale;
 		let xCart = width / 2 / scale;
-		console.log("TLLLLCART: " + yCart);
 
 		const tl = [cartCent.at(0) - xCart, cartCent.at(1) + yCart];
 		const bl = [cartCent.at(0) + xCart, cartCent.at(1) - yCart];
-		console.log("TLLLL: " + cartCent.at(0));
 
 		return [tl, bl];
 	}
@@ -149,7 +155,7 @@
 		}
 
 		tlbl = TlBl(canvas.width, canvas.height);
-		console.log(tlbl);
+		// console.log(tlbl);
 
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
 		const tlcoord: { x: number; y: number } = {
@@ -205,7 +211,7 @@
 </script>
 
 <body class="flex columns-2 h-screen w-screen bg-bg-900">
-	<Sidebar bind:latex_funcs />
+	<Sidebar bind:graph_funcs />
 	<div id="graph" class="w-max bg-blue-100 flex-grow-[1]">
 		<canvas
 			bind:this={canvas}

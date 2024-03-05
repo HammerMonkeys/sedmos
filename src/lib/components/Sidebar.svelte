@@ -30,9 +30,7 @@
 	id="sidebar"
 	class="overflow-y-auto overflow-x-clip max-h-screen resize-x min-w-20 w-72"
 >
-	<!--TODO: Make the key for the each block rely on a unique identifier key from the GraphFunction class-->
 	{#each graph_funcs as func, index (func.key)}
-		<!--TODO: Add back in this transition, once I figure out the flip shenanigans -->
 		<div
 			id="functioncontainer{index}"
 			class="flex flex-nowrap flex-1 text-primary-300 bg-secondary-500 focus-within:bg-accent-500 focus-within:text-primary-900"
@@ -59,13 +57,14 @@
 					graph_funcs[index] = graph_funcs[index - 1];
 					graph_funcs[index - 1] = temp;
 					graph_funcs = graph_funcs;
-					// console.log(graph_funcs);
 				}}
 			>
 				flip
 			</button>
 		</div>
 	{/each}
+	<!--TODO: Figure out why, on vercel, this button doesn't appear the same as locally (specifically the borders) -->
+	<!--TODO: Further, I think the general application of the fading can be improved to look better rather than manually hacking away the borders -->
 	<div
 		role="button"
 		id="functionAdd"

@@ -128,6 +128,8 @@
 		const center = [vporigin.x / squareSize, vporigin.y / squareSize];
 		const leftBorderCart = center[0] - scale / 2;
 		const topBorderCart = center[1] + canvas.height / squareSize / 2;
+		console.log("Centery : " + center[1]);
+		console.log("Top border: " + topBorderCart);
 
 		const xCart = leftBorderCart + canvas2.x / squareSize;
 		const yCart = topBorderCart - canvas2.y / squareSize;
@@ -190,17 +192,12 @@
 		};
 
 		ctx.lineWidth = 0.2;
-		for (let i = 0; i < scale; i++) {
+		for (let i = 0; i < scale + 1; i++) {
 			// draw vertical
-			console.log("\nVporiginx: " + vporigin.x);
 			const offset = vporigin.x % squareSize;
-			console.log("offset: " + offset);
 			const line = i * spacing - offset;
-			console.log("Canvas line: " + line);
-			console.log("Cartesian  : " + canvasToCart({ x: line, y: 0 }).x);
 
 			if (Math.round(canvasToCart({ x: line, y: 0 }).x) == 0) {
-				console.log("Drawing line at canvas " + line);
 				ctx.lineWidth = 1;
 			}
 			ctx.beginPath();
@@ -210,9 +207,13 @@
 			ctx.lineWidth = 0.2;
 		}
 		for (let i = 0; i < ycount; i++) {
+			const offset = vporigin.y % squareSize;
+			// const line = i * spacing - offset;
 			// draw horizontal
 			const line = tlcoord.y - i + 1;
 
+			// if (Math.round(canvasToCart({ x: 0, y: line }).y) == 0) {
+			console.log("Horizontal line: y=" + canvasToCart({ x: 0, y: line }).y);
 			if (line == 0) {
 				ctx.lineWidth = 1;
 			}

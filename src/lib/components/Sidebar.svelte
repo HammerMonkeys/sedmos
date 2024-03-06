@@ -50,17 +50,17 @@
 				bind:latex={graph_funcs[index].latex}
 				autofocus
 			/>
-			<button
-				on:click={() => {
-					if (index === 0) return;
-					const temp = graph_funcs[index];
-					graph_funcs[index] = graph_funcs[index - 1];
-					graph_funcs[index - 1] = temp;
-					graph_funcs = graph_funcs;
-				}}
-			>
-				flip
-			</button>
+			<!-- <button -->
+			<!-- 	on:click={() => { -->
+			<!-- 		if (index === 0) return; -->
+			<!-- 		const temp = graph_funcs[index]; -->
+			<!-- 		graph_funcs[index] = graph_funcs[index - 1]; -->
+			<!-- 		graph_funcs[index - 1] = temp; -->
+			<!-- 		graph_funcs = graph_funcs; -->
+			<!-- 	}} -->
+			<!-- > -->
+			<!-- 	flip -->
+			<!-- </button> -->
 		</div>
 	{/each}
 	<!--TODO: Figure out why, on vercel, this button doesn't appear the same as locally (specifically the borders) -->

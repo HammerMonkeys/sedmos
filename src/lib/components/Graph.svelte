@@ -11,7 +11,6 @@
 
 	$: {
 		latex_funcs = graph_funcs.map((f) => f.latex);
-		console.log(latex_funcs);
 	}
 
 	let tlbl: [number, number][] = [];
@@ -110,8 +109,8 @@
 	function cartToCanvas(coord: { x: number; y: number }) {
 		var squaresize = canvas.width / scale;
 		const xcenter = Math.round(scale / 2) * squaresize;
-		var ycount = ceil(canvas.height / squaresize);
-		const ycenter = (Math.round(ycount / 2) + 1) * squaresize;
+		const ycenter = canvas.height / 2;
+
 		return {
 			x: coord.x * squaresize - vporigin.x + xcenter,
 			y: -coord.y * squaresize + vporigin.y + ycenter,
@@ -123,11 +122,8 @@
 		const xshift = vporigin.x / squareSize;
 		const yshift = vporigin.y / squareSize;
 
-		const center = [vporigin.x / squareSize, vporigin.y / squareSize];
-		const leftBorderCart = center[0] - scale / 2;
-		const topBorderCart = center[1] + canvas.height / squareSize / 2;
-		console.log("Centery : " + center[1]);
-		console.log("Top border: " + topBorderCart);
+		const leftBorderCart = xshift - scale / 2;
+		const topBorderCart = yshift + canvas.height / squareSize / 2;
 
 		const xCart = leftBorderCart + canvas2.x / squareSize;
 		const yCart = topBorderCart - canvas2.y / squareSize;
@@ -157,8 +153,7 @@
 
 	function drawGrid() {
 		if (!ctx) return;
-		// console.log(getCenterCart());
-		// console.log(vporigin);
+		console.log("\nTop y: " + canvasToCart({ x: 0, y: 0 }).y); // Top left??
 
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
@@ -187,8 +182,8 @@
 		};
 
 		ctx.lineWidth = 0.2;
+		//INFO: draw vertical grid lines
 		for (let i = 0; i < scale + 1; i++) {
-			// draw vertical
 			const offset = vporigin.x % squareSize;
 			const line = i * spacing - offset;
 
@@ -201,22 +196,52 @@
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}
-		for (let i = 0; i < ycount; i++) {
-			const offset = vporigin.y % squareSize;
-			// const line = i * spacing - offset;
-			// draw horizontal
-			const line = tlcoord.y - i + 1;
 
-			// if (Math.round(canvasToCart({ x: 0, y: line }).y) == 0) {
-			console.log("Horizontal line: y=" + canvasToCart({ x: 0, y: line }).y);
-			if (line == 0) {
-				ctx.lineWidth = 1;
+		//WARNING: In the case of y, the line has to be drawn from the center outwards since you can't guarantee height
+		//INFO: draw horizontal grid lines
+		for (let i = 0; i < ceil(ycount / 2) + 1; i++) {
+			const centerY = canvas.height / 2;
+			const offset = vporigin.y % squareSize;
+
+			const line = tlcoord.y - i + 1;
+			const line1 = centerY + i * spacing + offset;
+			const line2 = centerY - i * spacing + offset;
+
+			console.log("Line1: " + Math.round(canvasToCart({ x: 0, y: line1 }).y));
+			console.log("Line2: " + Math.round(canvasToCart({ x: 0, y: line2 }).y));
+			if (Math.round(canvasToCart({ x: 0, y: line1 }).y) == 0) {
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.moveTo(0, line1);
+				ctx.lineTo(canvas.width, line1);
+				ctx.stroke();
+				ctx.lineWidth = 0.2;
+				ctx.beginPath();
+				ctx.moveTo(0, line2);
+				ctx.lineTo(canvas.width, line2);
+				ctx.stroke();
+			} else if (Math.round(canvasToCart({ x: 0, y: line2 }).y) == 0) {
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				ctx.moveTo(0, line2);
+				ctx.lineTo(canvas.width, line2);
+				ctx.stroke();
+				ctx.lineWidth = 0.2;
+				ctx.beginPath();
+				ctx.moveTo(0, line1);
+				ctx.lineTo(canvas.width, line1);
+				ctx.stroke();
+			} else {
+				ctx.lineWidth = 0.2;
+				ctx.beginPath();
+				ctx.moveTo(0, line1);
+				ctx.lineTo(canvas.width, line1);
+				ctx.stroke();
+				ctx.beginPath();
+				ctx.moveTo(0, line2);
+				ctx.lineTo(canvas.width, line2);
+				ctx.stroke();
 			}
-			ctx.beginPath();
-			ctx.moveTo(0, tl.y + i * spacing);
-			ctx.lineTo(canvas.width, tl.y + i * spacing);
-			ctx.stroke();
-			ctx.lineWidth = 0.2;
 		}
 
 		renderAllChunks();

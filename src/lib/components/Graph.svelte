@@ -153,7 +153,6 @@
 
 	function drawGrid() {
 		if (!ctx) return;
-		console.log("\nTop y: " + canvasToCart({ x: 0, y: 0 }).y); // Top left??
 
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
@@ -162,24 +161,14 @@
 		ctx.fillRect(origin.x, origin.y, 3, 3);
 
 		var spacing = canvas.width / scale;
-		const xcount = scale;
 		var ycount = ceil(canvas.height / spacing);
 		while (ycount >= 55) {
 			spacing *= 2;
 			ycount = ceil(canvas.height / spacing);
 		}
 
+		//TODO: Remove this scuffed as TlBl implentation in favor of the canvasToCart or cartToCanvas
 		tlbl = TlBl(canvas.width, canvas.height);
-		// console.log(tlbl);
-
-		// TODO: Remove this tl coord strategy after the CanvastoCart function works correctly for y values.
-		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
-		const tlcoord: { y: number } = {
-			y:
-				tl.y >= 0
-					? Math.floor(ycount / 2) + Math.floor(vporigin.y / spacing)
-					: Math.ceil(ycount / 2) + Math.ceil(vporigin.y / spacing),
-		};
 
 		ctx.lineWidth = 0.2;
 		//INFO: draw vertical grid lines
@@ -203,33 +192,20 @@
 			const centerY = canvas.height / 2;
 			const offset = vporigin.y % squareSize;
 
-			const line = tlcoord.y - i + 1;
 			const line1 = centerY + i * spacing + offset;
 			const line2 = centerY - i * spacing + offset;
 
-			console.log("Line1: " + Math.round(canvasToCart({ x: 0, y: line1 }).y));
-			console.log("Line2: " + Math.round(canvasToCart({ x: 0, y: line2 }).y));
-			if (Math.round(canvasToCart({ x: 0, y: line1 }).y) == 0) {
+			const line1Cart = Math.round(canvasToCart({ x: 0, y: line1 }).y);
+			const line2Cart = Math.round(canvasToCart({ x: 0, y: line2 }).y);
+
+			//NOTE: If one is 0, they both are
+			if (line1Cart == 0 || line2Cart == 0) {
 				ctx.lineWidth = 2;
 				ctx.beginPath();
-				ctx.moveTo(0, line1);
-				ctx.lineTo(canvas.width, line1);
-				ctx.stroke();
-				ctx.lineWidth = 0.2;
-				ctx.beginPath();
-				ctx.moveTo(0, line2);
-				ctx.lineTo(canvas.width, line2);
-				ctx.stroke();
-			} else if (Math.round(canvasToCart({ x: 0, y: line2 }).y) == 0) {
-				ctx.lineWidth = 2;
-				ctx.beginPath();
-				ctx.moveTo(0, line2);
-				ctx.lineTo(canvas.width, line2);
-				ctx.stroke();
-				ctx.lineWidth = 0.2;
-				ctx.beginPath();
-				ctx.moveTo(0, line1);
-				ctx.lineTo(canvas.width, line1);
+				line1Cart == 0 ? ctx.moveTo(0, line1) : ctx.moveTo(0, line2);
+				line1Cart == 0
+					? ctx.lineTo(canvas.width, line1)
+					: ctx.lineTo(canvas.width, line2);
 				ctx.stroke();
 			} else {
 				ctx.lineWidth = 0.2;

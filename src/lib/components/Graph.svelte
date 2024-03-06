@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { ceil, number } from "mathjs";
+	import { ceil } from "mathjs";
 	import buildRenderer from "$lib/foreground";
-	import Sidebar from "$lib/components/Sidebar.svelte";
 	import { GraphFunction } from "$lib/graphfunction";
 	// import log from "$lib/log";
 
@@ -119,11 +118,10 @@
 		};
 	}
 
+	//TODO: Fix the y value conversion, seems to be slightly off so I need to reconsider the algorithm
 	function canvasToCart(canvas2: { x: number; y: number }) {
 		const xshift = vporigin.x / squareSize;
 		const yshift = vporigin.y / squareSize;
-
-		// const tlCartx = getCenterCart()[0].
 
 		const center = [vporigin.x / squareSize, vporigin.y / squareSize];
 		const leftBorderCart = center[0] - scale / 2;
@@ -179,6 +177,7 @@
 		tlbl = TlBl(canvas.width, canvas.height);
 		// console.log(tlbl);
 
+		// TODO: Remove this tl coord strategy after the CanvastoCart function works correctly for y values.
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
 		const tlcoord: { y: number } = {
 			y:

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Sidebar from "$lib/components/Sidebar.svelte";
 	import { GraphFunction } from "$lib/graphfunction";
+	import Sidebar from "$lib/components/Sidebar.svelte";
 	import Graph from "$lib/components/Graph.svelte";
 
 	let graph_funcs: GraphFunction[] = [new GraphFunction()]; // Shared between components

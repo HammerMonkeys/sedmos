@@ -96,7 +96,7 @@
 
 		canvas.addEventListener("mousemove", (event) => {
 			if (dragging) {
-				vporigin.x += event.clientX - previousPoint.x;
+				vporigin.x += previousPoint.x - event.clientX;
 				vporigin.y += event.clientY - previousPoint.y;
 				previousPoint = { x: event.clientX, y: event.clientY };
 				drawGrid();
@@ -114,13 +114,32 @@
 		var ycount = ceil(canvas.height / squaresize);
 		const ycenter = (Math.round(ycount / 2) + 1) * squaresize;
 		return {
-			x: coord.x * squaresize + vporigin.x + xcenter,
+			x: coord.x * squaresize - vporigin.x + xcenter,
 			y: -coord.y * squaresize + vporigin.y + ycenter,
 		};
 	}
 
+	function canvasToCart(canvas2: { x: number; y: number }) {
+		const xshift = vporigin.x / squareSize;
+		const yshift = vporigin.y / squareSize;
+
+		// const tlCartx = getCenterCart()[0].
+
+		const center = [vporigin.x / squareSize, vporigin.y / squareSize];
+		const leftBorderCart = center[0] - scale / 2;
+		const topBorderCart = center[1] + canvas.height / squareSize / 2;
+
+		const xCart = leftBorderCart + canvas2.x / squareSize;
+		const yCart = topBorderCart - canvas2.y / squareSize;
+
+		return {
+			x: xCart,
+			y: yCart,
+		};
+	}
+
 	function getCenterCart() {
-		return [vporigin.x / scale, vporigin.y / scale];
+		return [vporigin.x / scale, vporigin.y / squareSize / 2];
 	}
 
 	// function TlBl(canvasX: number, canvasY, width: number, height: number) {
@@ -138,6 +157,9 @@
 
 	function drawGrid() {
 		if (!ctx) return;
+		// console.log(getCenterCart());
+		// console.log(vporigin);
+
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 
@@ -168,16 +190,22 @@
 		};
 
 		ctx.lineWidth = 0.2;
-		for (let i = 0; i < xcount; i++) {
+		for (let i = 0; i < scale; i++) {
 			// draw vertical
-			const line = tlcoord.x + i - 1;
+			console.log("\nVporiginx: " + vporigin.x);
+			const offset = vporigin.x % squareSize;
+			console.log("offset: " + offset);
+			const line = i * spacing - offset;
+			console.log("Canvas line: " + line);
+			console.log("Cartesian  : " + canvasToCart({ x: line, y: 0 }).x);
 
-			if (line == 0) {
+			if (Math.round(canvasToCart({ x: line, y: 0 }).x) == 0) {
+				console.log("Drawing line at canvas " + line);
 				ctx.lineWidth = 1;
 			}
 			ctx.beginPath();
-			ctx.moveTo(i * spacing + tl.x, 0);
-			ctx.lineTo(i * spacing + tl.x, canvas.height);
+			ctx.moveTo(line, 0);
+			ctx.lineTo(line, canvas.height);
 			ctx.stroke();
 			ctx.lineWidth = 0.2;
 		}

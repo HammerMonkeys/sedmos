@@ -180,11 +180,7 @@
 		// console.log(tlbl);
 
 		const tl = { x: vporigin.x % spacing, y: vporigin.y % spacing };
-		const tlcoord: { x: number; y: number } = {
-			x:
-				tl.x >= 0
-					? -Math.floor(xcount / 2) - Math.floor(vporigin.x / spacing)
-					: -Math.ceil(xcount / 2) - Math.ceil(vporigin.x / spacing) + 1,
+		const tlcoord: { y: number } = {
 			y:
 				tl.y >= 0
 					? Math.floor(ycount / 2) + Math.floor(vporigin.y / spacing)

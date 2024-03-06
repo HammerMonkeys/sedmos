@@ -158,14 +158,14 @@
 		canvas.height = canvas.clientHeight;
 
 		const origin = cartToCanvas({ x: 3, y: -1 });
-		ctx.fillRect(origin.x, origin.y, 3, 3);
+		// ctx.fillRect(origin.x, origin.y, 3, 3);
 
 		var spacing = canvas.width / scale;
 		var ycount = ceil(canvas.height / spacing);
-		while (ycount >= 55) {
-			spacing *= 2;
-			ycount = ceil(canvas.height / spacing);
-		}
+		// while (ycount >= 55) {
+		// 	spacing *= 2;
+		// 	ycount = ceil(canvas.height / spacing);
+		// }
 
 		//TODO: Remove this scuffed as TlBl implentation in favor of the canvasToCart or cartToCanvas
 		tlbl = TlBl(canvas.width, canvas.height);

@@ -17,26 +17,35 @@
     }
   }
 
-  const domToCanvas = 1;
-  // controls "zoom"
-  let screenToWorld = 50;
-
   // specified reactivity
-  let domBounds = new Bounds(0, 0);
+  let domBounds = new Bounds();
+  let canvasBounds = new Bounds();
+  let worldBounds = new Bounds();
   $: aspectRatio = domBounds.width / domBounds.height;
 
-  let canvasBounds = new Bounds();
-  $: canvasBounds.width = domBounds.width * domToCanvas;
-  $: canvasBounds.height = domBounds.height * domToCanvas;
+  const scale = {
+    domToCanvas: 1.2,
+    screenToWorld: 50,
 
-  let worldBounds = new Bounds(0, 0);
-  $: worldBounds.width = screenToWorld;
-  $: worldBounds.height = screenToWorld / aspectRatio;
+    // init values
+    canvasToWorld: 0,
+    domToWorld: 0,
+  };
 
-  $: canvasToWorld = screenToWorld / canvasBounds.width;
-  $: domToWorld = domToCanvas * canvasToWorld;
+  function init() {
+    canvasBounds.width = domBounds.width * scale.domToCanvas;
+    canvasBounds.height = domBounds.height * scale.domToCanvas;
 
-  $: conv = {
+    worldBounds.width = scale.screenToWorld;
+    worldBounds.height = scale.screenToWorld / aspectRatio;
+
+    scale.canvasToWorld = scale.screenToWorld / canvasBounds.width;
+    scale.domToWorld = scale.domToCanvas * scale.canvasToWorld;
+  }
+
+  $: if (canvas) init();
+
+  const conv = {
     // screen coordinates are (square) relative canvas coordinates.
     screenToCanvas(x: number, y: number) {
       return [x * canvasBounds.width, y * canvasBounds.height];
@@ -48,21 +57,21 @@
 
     canvasToWorld(x: number, y: number) {
       return [
-        worldBounds.originX + x * canvasToWorld,
-        worldBounds.originY + (canvasBounds.height - y) * canvasToWorld,
+        worldBounds.originX + x * scale.canvasToWorld,
+        worldBounds.originY + (canvasBounds.height - y) * scale.canvasToWorld,
       ];
     },
 
     worldToCanvas(x: number, y: number) {
       return [
-        (x - worldBounds.originX) / canvasToWorld,
-        (worldBounds.height - y + worldBounds.originY) / canvasToWorld,
+        (x - worldBounds.originX) / scale.canvasToWorld,
+        (worldBounds.height - y + worldBounds.originY) / scale.canvasToWorld,
       ];
     },
 
     domToWorld(x: number, y: number) {
-      const X = x * domToCanvas;
-      const Y = y * domToCanvas;
+      const X = x * scale.domToCanvas;
+      const Y = y * scale.domToCanvas;
       return conv.canvasToWorld(X, Y);
     },
   };
@@ -153,6 +162,7 @@
     let yPrev: number | null = null;
     let downSince = 0;
     const scrollSpeed = 1.1;
+    const clickTolerance = 100; // ms
 
     return {
       down(event: MouseEvent) {
@@ -171,8 +181,8 @@
 
         if (event.buttons !== 1) return;
 
-        const wdx = domToWorld * dx;
-        const wdy = domToWorld * dy;
+        const wdx = scale.domToWorld * dx;
+        const wdy = scale.domToWorld * dy;
         worldBounds.originX -= wdx;
         worldBounds.originY += wdy;
         draw.scene();
@@ -181,7 +191,7 @@
       up(event: MouseEvent) {
         const duration = event.timeStamp - downSince;
         // too much motion doesn't count
-        if (duration > 100) return;
+        if (duration > clickTolerance) return;
         const [x, y] = conv.domToWorld(event.clientX, event.clientY);
         draw.keystones.push([x, y]);
         draw.scene();
@@ -189,26 +199,22 @@
 
       scroll(event: WheelEvent) {
         const { deltaY } = event;
+        const xCli = event.clientX;
+        const yCli = event.clientY;
 
-        // scroll to center, need to adjust origin
-        if (deltaY > 0) {
-          const zoom = scrollSpeed;
+        const [x0, y0] = conv.domToWorld(xCli, yCli);
 
-          const [x, y] = conv.domToWorld(event.clientX, event.clientY);
-          screenToWorld *= zoom;
+        const factor = deltaY > 0 ? scrollSpeed : 1 / scrollSpeed;
 
-          worldBounds.originX = x - (x - worldBounds.originX) * zoom;
-          worldBounds.originY = y - (y - worldBounds.originY) * zoom;
-        } else {
-          const zoom = 1 / scrollSpeed;
+        scale.screenToWorld *= factor;
+        init(); // changing a top level requires reinit
 
-          screenToWorld *= zoom;
-          const [x, y] = conv.domToWorld(event.clientX, event.clientY);
+        const [x1, y1] = conv.domToWorld(xCli, yCli);
+        const dx = x1 - x0;
+        const dy = y1 - y0;
 
-          worldBounds.originX = x - (x - worldBounds.originX) * zoom;
-          worldBounds.originY = y - (y - worldBounds.originY) * zoom;
-        }
-
+        worldBounds.originX -= dx;
+        worldBounds.originY -= dy;
         draw.scene();
       },
     };

@@ -2,19 +2,30 @@
 	import { flip } from "svelte/animate";
 	import { onMount } from "svelte";
 
-	const items = [
+	const items: { id: number; val: number; node: HTMLElement | null }[] = [
 		{ id: 1, val: 1, node: null },
 		{ id: 2, val: 2, node: null },
 		{ id: 3, val: 3, node: null },
 	];
 
 	let targets: HTMLElement[] = [];
+	let dragging: HTMLElement | null = null;
 
-	function draggable(node: HTMLElement, params: { axis: "x" | "y" | "xy" }) {
+	function draggable(
+		node: HTMLElement,
+		params: { axis: "x" | "y" | "xy"; id: number },
+	) {
 		let x: number;
 		let y: number;
-		let originalX = parseInt(node.style.left);
-		let originalY = parseInt(node.style.top);
+		let targetX = parseInt(node.style.left); // Default targets to initial position
+		let targetY = parseInt(node.style.top);
+		items.findIndex((el) => {
+			if (el.id === params.id) {
+				el.node = node;
+			}
+		});
+		console.log(items);
+
 		targets.push(node);
 		console.log(targets);
 		let activeswap = false;
@@ -32,6 +43,7 @@
 		function handleMouseDown(event: MouseEvent) {
 			x = event.clientX;
 			y = event.clientY;
+			dragging = node;
 
 			window.addEventListener("mousemove", handleMouseMove);
 			window.addEventListener("mouseup", handleMouseUp);
@@ -60,18 +72,14 @@
 					);
 				});
 			}
-			// node.dispatchEvent(
-			// 	new CustomEvent("dragmove", {
-			// 		detail: { x, y, dx, dy },
-			// 	}),
-			// );
 		}
 
 		function handleMouseUp(event: MouseEvent) {
 			x = event.clientX;
 			y = event.clientY;
-			node.style.left = `${originalX}px`;
-			node.style.top = `${originalY}px`;
+			dragging = null;
+			node.style.left = `${targetX}px`;
+			node.style.top = `${targetY}px`;
 			node.dispatchEvent(
 				new CustomEvent("dragend", {
 					detail: { x, y },
@@ -86,17 +94,20 @@
 			for (let i = 0; i < targets.length; i++) {
 				if (
 					event.detail.x > targets[i].getBoundingClientRect().left &&
-					event.detail.x < targets[i].getBoundingClientRect().right
+					event.detail.x < targets[i].getBoundingClientRect().right &&
+					targets[i] !== dragging // Check if the current node is not the dragging node
 				) {
 					const cur = targets.findIndex((el) => el === node);
 					const temp = items[i];
 					items[i] = items[cur];
 					items[cur] = temp;
+					targetX = parseInt(targets[i].style.left);
+					targetY = parseInt(targets[i].style.top);
 				}
 			}
 			setTimeout(() => {
 				activeswap = false;
-			}, 300);
+			}, 100);
 		});
 
 		onMount(() => {
@@ -120,7 +131,7 @@
 <div class="container">
 	{#each items as item, index (item.id)}
 		<div
-			use:draggable={{ axis: "xy" }}
+			use:draggable={{ axis: "x", id: item.id }}
 			class="item draggable"
 			style="top: 0; left: {index * 120}px;"
 			animate:flip={{ duration: 100 }}

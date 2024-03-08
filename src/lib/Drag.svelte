@@ -10,7 +10,7 @@
 
 	let dragging: HTMLElement | null = null;
 
-	function draggable(
+	export function draggable(
 		node: HTMLElement,
 		params: { axis: "x" | "y" | "xy"; id: number },
 	) {

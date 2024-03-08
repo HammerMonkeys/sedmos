@@ -4,6 +4,7 @@
 	import { cubicOut } from "svelte/easing";
 	import { flip } from "svelte/animate";
 	import { GraphFunction } from "$lib/graphfunction";
+	import draggable from "$lib/Drag.svelte";
 
 	export let graph_funcs: GraphFunction[] = [new GraphFunction()];
 

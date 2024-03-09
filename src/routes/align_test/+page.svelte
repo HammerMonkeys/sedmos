@@ -1,6 +1,10 @@
 <script lang="ts">
   import "../../app.css";
-  import { Bounds, CanvasBrain } from "$lib/canvas/canvasBrain";
+  import {
+    Bounds,
+    type CanvasBrain,
+    newCanvasBrain,
+  } from "$lib/canvas/canvasBrain";
   import log from "$lib/log";
 
   let canvas: HTMLCanvasElement;
@@ -11,12 +15,87 @@
   let brain: CanvasBrain;
 
   function newBrain() {
-    brain = new CanvasBrain(canvas, domBounds);
+    brain = newCanvasBrain(canvas, domBounds, screenToWorld, domToCanvas);
   }
+
+  const draw = {
+    keystones: [] as [number, number][],
+
+    point(x: number, y: number, c: number, msg: string) {
+      // map c to hue
+      const color = `hsl(${c * 360}, 100%, 85%)`;
+      brain.strokeStyle = color;
+
+      brain.beginPath();
+      const rad = 20;
+      brain.lineWidth = 10;
+      brain.arc(x, y, rad, 0, 2 * Math.PI);
+      brain.stroke();
+
+      brain.font = "30px serif";
+      const xOff = (x - brain.canvasBounds.width / 2) / 4 + 80;
+      const yOff = (y - brain.canvasBounds.height / 2) / 15;
+      brain.fillText(msg, x - xOff, y - yOff);
+    },
+
+    screenPoint(x: number, y: number, c = 1, msg = "") {
+      const [X, Y] = brain.conv.screenToCanvas(x, y);
+      draw.point(
+        X,
+        Y,
+        c,
+        `s(${Math.round(x * 10) / 10}, ${Math.round(y * 10) / 10}) ${msg}`,
+      );
+    },
+
+    worldPoint(x: number, y: number, c = 1, msg = "") {
+      const [X, Y] = brain.conv.worldToCanvas(x, y);
+      draw.point(X, Y, c, `w(${Math.round(x)}, ${Math.round(y)}) ${msg}`);
+    },
+
+    scene() {
+      log(brain);
+      brain.reset();
+
+      for (let i = 0.2; i <= 0.8; i += 0.1) {
+        const x = i;
+        draw.screenPoint(x, x, (i - 0.2) / 0.8, Math.round(i * 10).toString());
+      }
+
+      draw.worldPoint(
+        brain.worldBounds.originX,
+        brain.worldBounds.originY,
+        0,
+        "origin",
+      );
+      const edgeX = brain.worldBounds.originX + brain.worldBounds.width;
+      const edgeY = brain.worldBounds.originY + brain.worldBounds.height;
+      draw.worldPoint(edgeX, edgeY, 0, "edge");
+
+      for (const k of draw.keystones) {
+        const [x, y] = k;
+        draw.worldPoint(x, y, Math.random());
+      }
+
+      // drawing origin axis
+
+      {
+        draw.worldPoint(0, 0, 0);
+        const [x0, y0] = brain.conv.worldToCanvas(0, 0);
+        brain.beginPath();
+        brain.lineWidth = 1;
+        brain.moveTo(x0, 0);
+        brain.lineTo(x0, brain.canvasBounds.height);
+        brain.moveTo(0, y0);
+        brain.lineTo(brain.canvasBounds.width, y0);
+        brain.stroke();
+      }
+    },
+  };
 
   function refresh() {
     newBrain();
-    brain.draw.scene();
+    draw.scene();
   }
 
   $: if (canvas && domBounds.width) refresh();
@@ -46,11 +125,11 @@
 
         if (event.buttons !== 1) return;
 
-        const wdx = brain.scale.domToWorld * dx;
-        const wdy = brain.scale.domToWorld * dy;
+        const wdx = brain.scaleFactors.domToWorld * dx;
+        const wdy = brain.scaleFactors.domToWorld * dy;
         brain.worldBounds.originX -= wdx;
         brain.worldBounds.originY += wdy;
-        brain.draw.scene();
+        draw.scene();
       },
 
       up(event: MouseEvent) {
@@ -58,8 +137,8 @@
         // too much motion doesn't count
         if (duration > clickTolerance) return;
         const [x, y] = brain.conv.domToWorld(event.clientX, event.clientY);
-        brain.draw.keystones.push([x, y]);
-        brain.draw.scene();
+        draw.keystones.push([x, y]);
+        draw.scene();
       },
 
       scroll(event: WheelEvent) {
@@ -80,7 +159,7 @@
 
         brain.worldBounds.originX -= dx;
         brain.worldBounds.originY -= dy;
-        brain.draw.scene();
+        draw.scene();
       },
     };
   })();

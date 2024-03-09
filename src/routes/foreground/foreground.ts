@@ -1,5 +1,6 @@
 import type { Universe } from "$lib/numerical";
 import type { int } from "$lib/types";
+import type { CanvasBrain } from "$lib/canvas/canvasBrain";
 
 interface ChunkState {
   rowState: number[][];
@@ -43,6 +44,8 @@ export class ChunkManager {
     this.universe = universe;
     this.microSplits = microSplits;
     this.macroSplits = macroSplits;
+    this.microGap = this.chunkSize / this.microSplits;
+    this.macroGap = this.chunkSize / this.macroSplits;
   }
 
   // --------------------------------------------------
@@ -73,13 +76,38 @@ export class ChunkManager {
   // Computational
   // --------------------------------------------------
 
-  public readonly buildChunk = (() => {
-    const microGap = this.chunkSize / this.microSplits;
-    const macroGap = this.chunkSize / this.macroSplits;
+  private readonly microGap: number;
+  private readonly macroGap: number;
 
-    return (x: int, y: int) => {
-      // TODO: Later, we will need to take in a ctx and ability to do canvas-world conversions.
-      // Perhaps, the best approach would be to write a wrapper around context2d.
+  private newChunkState(
+    rowSize: int = this.microSplits,
+    gridSize: int = this.macroSplits,
+  ) {
+    return {
+      // row of empty arrays
+      rowState: new Array(rowSize).fill(0).map(() => []),
+      // grid of empty arrays
+      gridState: new Array(gridSize)
+        .fill(0)
+        .map(() => new Array(gridSize).fill(0).map(() => [])),
     };
-  })();
+  }
+
+  public buildChunk(x: int, y: int, brain: CanvasBrain): ChunkState {
+    const chunkId = cantorPairing(x, y);
+    if (this.chunks.has(chunkId)) return this.chunks.get(chunkId)!;
+    const chunk = this.newChunkState();
+
+    // TODO: to proceed, the Universe should be modified to provide the state
+    // of an entire region instead of a particular coordinate to open the door
+    // to GPU parallelization later. It should be:
+    //   computeRegion(coords, curveSubdivisions, fieldSubdivisions) => Drawable[]
+    //   Drawable: Curve | VField
+    //     Curve: Coord[]  // + NaN seperators (for intermediate holes)
+    //     VField: (Coord,Value)[][]
+    // with these changes, buildChunk may not be necessary. In that case, Universe
+    // should automaticaly cache the region values.
+
+    return chunk;
+  }
 }

@@ -7,7 +7,7 @@
 	import draggable from "$lib/Drag.svelte";
 
 	export let graph_funcs: GraphFunction[] = [new GraphFunction()];
-	graph_funcs[0].latex = "y = 8 / (x^2 + 4)";
+	graph_funcs[0].latex = "y = \\frac{8}{x^2+4}";
 
 	// TODO: (painful) make an animation for the drag and drop which locks the "y" (vertical) axis
 	function dragStart(event: DragEvent, index: number) {

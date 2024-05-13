@@ -3,7 +3,7 @@ import { buildUniverse } from "$lib/numerical";
 import type { Universe } from "$lib/numerical";
 
 const log = (...args: any[]) => baseLog("\t-", ...args);
-// todo remove
+//TODO: remove
 log("\n\n\n\n\n");
 
 const chunkWidth = 5;
@@ -93,7 +93,7 @@ export function buildRenderer(
     const y0 = chunkOrigin[1] * chunkWidth;
 
     // curves
-    // todo vector field ivp
+    //TODO: vector field ivp
 
     const rowState = new Array(microDivisions);
 
@@ -168,7 +168,7 @@ export function buildRenderer(
     const x0 = chunkOrigin[0] * chunkWidth;
 
     for (const curveId in curveIndices) {
-      // todo x dep var
+      //TODO: x dep var
       const y0 = rowState[0][curveId];
       if (y0 === undefined) continue;
 
@@ -191,7 +191,7 @@ export function buildRenderer(
     const y0 = chunkOrigin[1] * chunkWidth;
 
     for (const fieldId in fieldIndices) {
-      // todo set field color here
+      //TODO: set field color here
       ctx.strokeStyle = "sky_blue";
 
       for (const i in macroAxis) {

@@ -1,6 +1,7 @@
 import * as math from "mathjs";
 import latexToAscii from "./utils/latexToAscii";
 import log from "./log";
+import type { int } from "$lib/types";
 import { Solver } from "odex";
 
 // All dependencies are parsed as "symbols"
@@ -15,6 +16,11 @@ interface Metadata {
   type: VisualType;
   dependentVar?: HotVar;
   hot: boolean; // hot means it needs re-eval per xy coordinate
+}
+
+export interface ChunkState {
+  rowState: number[][];
+  gridState: number[][][];
 }
 
 // todo buff universe
@@ -38,7 +44,7 @@ class CircularDependencyError extends Error {
   }
 }
 
-// todo in JS, error vs exception?
+// TODO: in JS, error vs exception?
 class UnsupportedFeatureError extends Error {
   public affected_id: number;
   public feature: string;
@@ -57,7 +63,12 @@ function extendMathJS() {
 }
 extendMathJS();
 
-export function buildUniverse(inputData: string[]) {
+export function buildUniverse(
+  inputData: string[],
+  chunkSize: number,
+  microSplits: int,
+  macroSplits: int,
+) {
   // TODO remove
   log("\n\n\n\n");
 
@@ -257,97 +268,118 @@ export function buildUniverse(inputData: string[]) {
 
   // the cold scope is the basic state that doesn't depend on unstable values
   const coldScope = {};
-  // second number is to store the IVP curve assoc. with vfield
-  const state: Array<number | [number | undefined, number | undefined]> =
-    new Array(trees.length);
+  const coldState: [number, any][] = []; // public
 
   for (const i of priorityIndices) {
     if (hotMap[i]) continue;
     if (!compiled[i]) continue;
     const result = compiled[i].evaluate(coldScope);
-    state[i] = result;
+    coldState.push([i, result]);
   }
 
-  let vFields = metadata
-    .map((m, i) => (m.type === "field" ? i : -1))
-    .filter((i) => i != -1);
-  let odeSolvers: Map<number, (scope: any) => number> = new Map();
+  const filterFor = (type: string) =>
+    metadata.map((m, i) => (m.type === type ? i : -1)).filter((i) => i != -1);
 
+  // public
+  const indicesByType = {
+    value: filterFor("value"),
+    field: filterFor("field"),
+    curve: filterFor("curve"),
+    novisual: filterFor("novisual"),
+  };
+
+  // let odeSolvers: Map<number, (scope: any) => number> = new Map();
+
+  // TODO: udpate Universe interface
   return {
     metadata,
-    state, // overwritten with hot values after eval
+    coldState,
+    indicesByType,
 
-    odeInitialConditions(y0: number, t0: number) {
-      odeSolvers.clear();
+    computeChunk(x: int, y: int) {
+      const state: ChunkState = {
+        // row of empty arrays
+        rowState: new Array(microSplits).fill(0).map(() => []),
+        // grid of empty arrays
+        gridState: new Array(macroSplits)
+          .fill(0)
+          .map(() => new Array(macroSplits).fill(0).map(() => [])),
+      };
 
-      for (const i of vFields) {
-        const fn = compiled[i];
-
-        let scopeLock: [any] = [{}];
-        const ode = (_: number, _2: number[]): number[] => {
-          const scope = scopeLock[0];
-          return [fn.evaluate(scope)];
-        };
-
-        // todo impl systems of equations
-        const solver = new Solver(ode, 1);
-        const model = solver.integrate(t0, [y0]);
-
-        const f = (scope: any) => {
-          scopeLock[0] = scope;
-          return model(scope.t)[0];
-        };
-
-        odeSolvers.set(i, f);
-      }
+      return state;
     },
 
-    evalWith(indepVar: number, depVar: number, vectorFields = false) {
-      const controlledState = { x: indepVar, y: depVar, t: indepVar };
-
-      let scope = { ...coldScope, ...controlledState };
-
-      for (const i of priorityIndices) {
-        if (!hotMap[i]) continue;
-
-        if (metadata[i].type !== "field") {
-          const fn = compiled[i];
-          const result = fn.evaluate(scope);
-          state[i] = result;
-        } else {
-          // vector field eval two parts:
-          //     - IVP curve
-          //     - vector field
-
-          // vector fields require making calls to a 3rd party ODE solver
-          let slopeResult: number | undefined;
-          let ivpResult: number | undefined;
-
-          const fn = odeSolvers.get(i);
-          if (fn) {
-            ivpResult = fn(scope);
-          }
-
-          if (vectorFields) {
-            // vector field, not IVP curve
-            const fn = compiled[i];
-            const result = fn.evaluate(scope);
-            slopeResult = result;
-          }
-
-          state[i] = [slopeResult, ivpResult];
-        }
-
-        const meta = metadata[i];
-        if (meta.type === "curve" || meta.type === "field") {
-          // x,y,t need to be reinitialized after each curve/field due to impurities in
-          // the way the scope is managed
-          scope = { ...scope, ...controlledState };
-        }
-      }
-
-      return this;
-    },
+    // odeInitialConditions(y0: number, t0: number) {
+    //   odeSolvers.clear();
+    //
+    //   for (const i of vFields) {
+    //     const fn = compiled[i];
+    //
+    //     let scopeLock: [any] = [{}];
+    //     const ode = (_: number, _2: number[]): number[] => {
+    //       const scope = scopeLock[0];
+    //       return [fn.evaluate(scope)];
+    //     };
+    //
+    //     // todo impl systems of equations
+    //     const solver = new Solver(ode, 1);
+    //     const model = solver.integrate(t0, [y0]);
+    //
+    //     const f = (scope: any) => {
+    //       scopeLock[0] = scope;
+    //       return model(scope.t)[0];
+    //     };
+    //
+    //     odeSolvers.set(i, f);
+    //   }
+    // },
+    //
+    // evalWith(indepVar: number, depVar: number, vectorFields = false) {
+    //   const controlledState = { x: indepVar, y: depVar, t: indepVar };
+    //
+    //   let scope = { ...coldScope, ...controlledState };
+    //
+    //   for (const i of priorityIndices) {
+    //     if (!hotMap[i]) continue;
+    //
+    //     if (metadata[i].type !== "field") {
+    //       const fn = compiled[i];
+    //       const result = fn.evaluate(scope);
+    //       state[i] = result;
+    //     } else {
+    //       // vector field eval two parts:
+    //       //     - IVP curve
+    //       //     - vector field
+    //
+    //       // vector fields require making calls to a 3rd party ODE solver
+    //       let slopeResult: number | undefined;
+    //       let ivpResult: number | undefined;
+    //
+    //       const fn = odeSolvers.get(i);
+    //       if (fn) {
+    //         ivpResult = fn(scope);
+    //       }
+    //
+    //       if (vectorFields) {
+    //         // vector field, not IVP curve
+    //         const fn = compiled[i];
+    //         const result = fn.evaluate(scope);
+    //         slopeResult = result;
+    //       }
+    //
+    //       state[i] = [slopeResult, ivpResult];
+    //     }
+    //
+    //     const meta = metadata[i];
+    //     if (meta.type === "curve" || meta.type === "field") {
+    //       // x,y,t need to be reinitialized after each curve/field due to impurities in
+    //       // the way the scope is managed
+    //       scope = { ...scope, ...controlledState };
+    //     }
+    //   }
+    //
+    //   return this;
+    // },
   };
 }
 
@@ -401,15 +433,15 @@ function dependencyAnalysis(depMap: Map<string, Dependencies>): string[] {
   return Array.from(depMap.keys()).sort((a, b) => search(a) - search(b));
 }
 
-let uni = buildUniverse([]);
-log("State:", JSON.stringify(uni.state, null, 2));
-
-log("Eval with", 3, 2);
-uni.evalWith(3, 2);
-log("State:", JSON.stringify(uni.state, null, 2));
-
-log("Eval with", 1, 1);
-uni.evalWith(1, 1);
-log("State:", JSON.stringify(uni.state, null, 2));
-
-log("Universe:", uni);
+// let uni = buildUniverse([]);
+// log("State:", JSON.stringify(uni.state, null, 2));
+//
+// log("Eval with", 3, 2);
+// uni.evalWith(3, 2);
+// log("State:", JSON.stringify(uni.state, null, 2));
+//
+// log("Eval with", 1, 1);
+// uni.evalWith(1, 1);
+// log("State:", JSON.stringify(uni.state, null, 2));
+//
+// log("Universe:", uni);

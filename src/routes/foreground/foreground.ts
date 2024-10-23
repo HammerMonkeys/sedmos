@@ -79,35 +79,13 @@ export class ChunkManager {
   private readonly microGap: number;
   private readonly macroGap: number;
 
-  private newChunkState(
-    rowSize: int = this.microSplits,
-    gridSize: int = this.macroSplits,
-  ) {
-    return {
-      // row of empty arrays
-      rowState: new Array(rowSize).fill(0).map(() => []),
-      // grid of empty arrays
-      gridState: new Array(gridSize)
-        .fill(0)
-        .map(() => new Array(gridSize).fill(0).map(() => [])),
-    };
-  }
-
-  public buildChunk(x: int, y: int, brain: CanvasBrain): ChunkState {
-    const chunkId = cantorPairing(x, y);
-    if (this.chunks.has(chunkId)) return this.chunks.get(chunkId)!;
-    const chunk = this.newChunkState();
-
-    // TODO: to proceed, the Universe should be modified to provide the state
-    // of an entire region instead of a particular coordinate to open the door
-    // to GPU parallelization later. It should be:
-    //   computeRegion(coords, curveSubdivisions, fieldSubdivisions) => Drawable[]
-    //   Drawable: Curve | VField
-    //     Curve: Coord[]  // + NaN seperators (for intermediate holes)
-    //     VField: (Coord,Value)[][]
-    // with these changes, buildChunk may not be necessary. In that case, Universe
-    // should automaticaly cache the region values.
-
-    return chunk;
-  }
+  // TODO: to proceed, the Universe should be modified to provide the state
+  // of an entire region instead of a particular coordinate to open the door
+  // to GPU parallelization later. It should be:
+  //   computeRegion(coords, curveSubdivisions, fieldSubdivisions) => Drawable[]
+  //   Drawable: Curve | VField
+  //     Curve: Coord[]  // + NaN seperators (for intermediate holes)
+  //     VField: (Coord,Value)[][]
+  // with these changes, buildChunk may not be necessary. In that case, Universe
+  // should automaticaly cache the region values.
 }

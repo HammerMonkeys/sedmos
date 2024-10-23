@@ -29,5 +29,10 @@
     "odex": "^3.0.0-rc.4",
     "svelte-mathquill": "^0.7.0",
     "uuid": "^9.0.1"
+  },
+  "overrides": {
+    "svelte-mathquill": {
+      "svelte": "$svelte"
+    }
   }
 }

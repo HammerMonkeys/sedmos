@@ -1,11 +1,12 @@
 // got this code from:
 // https://github.com/Heavenira/desmos2ascii/blob/main/desmos2ascii.js
-// This is a PASER for converting latex to ascii, it has little to do
+// This is a PARSER for converting latex to ascii, it has little to do
 // with desmos specifically.
 // This parser has been slightly modified:
 //    - removed useless console.log
 //    - Latex 2^{a+b} -> 2^(a+b) not 2**{a+b}
 //    - y' -> y' not y*'
+//    - func(x) -> func(x) not f*u*n*c(x)
 
 let optimizeForParsing = true;
 

@@ -1,12 +1,9 @@
 import * as math from "mathjs";
-import latexToAscii from "../utils/latexToAscii";
-import {CircularDependencyError, ExprEvalError} from "$lib/numerical/exprEvalError";
+import {CircularDependency} from "$lib/numerical/exprEvalError";
 import {DiGraph, DiGraphNode} from "$lib/numerical/diGraph";
+import {Expression, type Scope} from "$lib/numerical/expression";
 
 // TODO: this needs string interning
-
-type Visual = "xcurve" | "ycurve" | "field" | "none";
-type Scope = Map<string, number>;
 
 function extendMathJS() {
   const isAlphaOriginal = math.parse.isAlpha;
@@ -15,98 +12,6 @@ function extendMathJS() {
   };
 }
 extendMathJS();
-
-export class Expression {
-  public readonly latex: string;
-  private _compiled?: math.EvalFunction;
-  // such as "id(x) = 3x", or "id = 4"
-  public id?: string;
-  // "y = x" type ycurve, or inferred if "f = a + b", or none if "a = 2"
-  public visual?: Visual = "none";
-  // "f(_) = deps"
-  public deps: Set<string> = new Set();
-  // "f(args) = 1"
-  public args: Set<string> = new Set();
-
-  constructor(latex: string, id?: string) {
-    this.latex = latex;
-    const ascii = latexToAscii(latex);
-    const ast = math.parse(ascii);
-    this._compiled = math.compile(this.latex);
-    this._meta(ast);
-    this.id = id ?? this.id;
-  }
-
-  private _meta(root: math.MathNode) {
-    let name: string | undefined;
-    let deps = new Set<string>();
-    let args = new Set<string>();
-    let traversalHead = root;
-
-    switch (root.type) {
-      case "FunctionAssignmentNode":
-      {
-        const assnNode = root as math.FunctionAssignmentNode;
-        name = assnNode.name;
-        args = new Set(assnNode.params);
-        traversalHead = assnNode.expr;
-        break;
-      }
-      case "AssignmentNode":
-      {
-        const assnNode = root as math.AssignmentNode;
-        name = assnNode.name;
-        traversalHead = assnNode.value;
-        break;
-      }
-    }
-
-    switch (name) {
-      case "y":
-        this.visual = "ycurve";
-        break;
-      case "x":
-        this.visual = "xcurve";
-        break;
-      case "x'":
-      case "y'":
-        this.visual = "field";
-        break;
-      default:
-        this.id = name;
-      break;
-    }
-
-    traversalHead.traverse((node) => {
-      if (node.type !== "SymbolNode") return;
-      const symNode = node as math.SymbolNode;
-      if (args.has(symNode.name)) return;
-      if (name && symNode.name === name) return;
-      deps.add(symNode.name);
-    });
-
-    if (!this.visual) {
-      if (args.size == 0) {
-        if (!('x' in deps || 'y' in deps)) {
-          this.visual = "none";
-        }
-      }
-    }
-
-    for (const dep of deps) {
-      if (dep === "y'" || dep === "x'") {
-        throw new ExprEvalError("Only explicit differential equations in y' or x' are supported");
-      }
-    }
-
-    this.deps = deps;
-    this.args = args;
-  }
-
-  public eval(scope: Scope) {
-    return this._compiled?.evaluate(scope);
-  }
-}
 
 class EvalState {
   public readonly expr?: Expression;
@@ -167,7 +72,7 @@ export class EvalGraph {
     }
 
     if (this._depGraph.detect_cycle(id)) {
-      throw new CircularDependencyError();
+      throw new CircularDependency(id);
     }
 
     this._refresh(id);

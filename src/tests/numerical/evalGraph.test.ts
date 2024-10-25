@@ -1,5 +1,6 @@
-import {EvalGraph, Expression} from "$lib/numerical/evalGraph";
+import {EvalGraph} from "$lib/numerical/evalGraph";
 import {exp} from "mathjs";
+import {Expression} from "$lib/numerical/expression";
 
 test("Dependency evaluation", () => {
   const exps = [

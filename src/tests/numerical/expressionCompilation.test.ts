@@ -1,6 +1,7 @@
 import * as math from "mathjs";
 import latexToAscii from "$lib/utils/latexToAscii";
-import {Expression} from "$lib/numerical/evalGraph";
+
+import {Expression} from "$lib/numerical/expression";
 
 describe("Latex -> Ascii", () => {
   test("Quadratic Formula", () => {

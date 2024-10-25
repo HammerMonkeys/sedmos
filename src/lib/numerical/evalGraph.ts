@@ -75,7 +75,8 @@ export class EvalGraph {
       throw new CircularDependency(id);
     }
 
-    this._refresh(id);
+    this._inferVisualType(id);
+    return this._refresh(id);
   }
 
   public forget(id: string) {
@@ -86,11 +87,16 @@ export class EvalGraph {
     }
 
     node.value = new EvalState();
-    this._refresh(id);
+    const hot = this._refresh(id);
+    // TODO: should NOT be removing from digraph, only erase eval states
     this._depGraph.remove(id);
+    return hot;
   }
 
   private _refresh(id: string) {
+    // a set of ids that have been updated in the current refresh
+    const hot = new Set<string>();
+
     function refresh_recursive(node: DiGraphNode<EvalState>) {
       let parentScopes = [];
 
@@ -104,9 +110,15 @@ export class EvalGraph {
       if (!parentScopes.includes(undefined)) {
         // @ts-ignore
         state.evalWith(parentScopes);
-      } else if (state.scope !== undefined) {
-        state.scope = undefined;
-        state.value = undefined;
+
+        if (state.expr && state.expr!.id) {
+          hot.add(state.expr!.id);
+        }
+      } else {
+        if (state.scope !== undefined) {
+          state.scope = undefined;
+          state.value = undefined;
+        }
       }
 
       for (const child of node.children) {
@@ -121,6 +133,9 @@ export class EvalGraph {
     }
 
     refresh_recursive(node);
+    // returns the set of ids that have been updated
+    // so that the UI can update only those
+    return hot;
   }
 
   public get(id: string) {
@@ -131,5 +146,10 @@ export class EvalGraph {
     }
 
     return node.value.value;
+  }
+
+  private _inferVisualType(id: string) {
+    // TODO: infer visual type
+    throw new Error("Not implemented");
   }
 }

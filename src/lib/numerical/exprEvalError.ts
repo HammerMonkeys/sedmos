@@ -5,9 +5,23 @@ export class ExprEvalError extends Error {
   }
 }
 
-export class CircularDependencyError extends ExprEvalError {
+export class BadLatexSyntax extends ExprEvalError {
   constructor() {
-    super("Circular dependency detected");
+    super("Invalid latex syntax");
+    this.name = "LatexSyntaxError";
+  }
+}
+
+export class DuplicateSymbol extends ExprEvalError {
+  constructor(id: string) {
+    super("Duplicate symbol detected: " + id);
+    this.name = "DuplicateSymbolError";
+  }
+}
+
+export class CircularDependency extends ExprEvalError {
+  constructor(id: string) {
+    super("Circular dependency detected: " + id);
     this.name = "CircularDependencyError";
   }
 }

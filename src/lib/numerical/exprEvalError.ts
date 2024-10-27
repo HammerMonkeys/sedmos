@@ -39,3 +39,10 @@ export class Not2DGraphable extends ExprEvalError {
     this.name = "Not2DGraphableError";
   }
 }
+
+export class ImplicitFieldEquation extends ExprEvalError {
+  constructor() {
+    super("y' or x' must be on the left hand side of the equation");
+    this.name = "ImplicitFieldEquationError";
+  }
+}

@@ -10,6 +10,15 @@ describe("Latex -> Ascii", () => {
     expect(latexToAscii(latex)).toBe(ascii);
   });
 
+  test("Differential variable assignment" , () => {
+    let latex = "y'=x^2";
+    expect(latexToAscii(latex)).toBe(latex);
+    latex = "x'=x^2";
+    expect(latexToAscii(latex)).toBe(latex);
+    latex = "y'(x,y)=5"
+    expect(latexToAscii(latex)).toBe(latex);
+  });
+
   // TODO: Latex -> Ascii conversion can't do long function names
   // test("Complex function names", () => {
   //   const latex = "FiG'(a,b) = 1";
@@ -41,5 +50,25 @@ describe("Expression for EvalGraph", () => {
     expect(expr.args).toEqual(new Set(["a", "b"]));
     expect(expr.deps).toEqual(new Set(["x", "c"]));
     expect(expr.id).toBe("Q");
+  });
+
+  test("Visual type request", () => {
+    let expr = new Expression("y = x^2");
+    expect(expr.requestedVisual).toBe("ycurve");
+    expr = new Expression("x = y^2");
+    expect(expr.requestedVisual).toBe("xcurve");
+    expr = new Expression("y' = x^2");
+    expect(expr.requestedVisual).toBe("yfield");
+    expr = new Expression("x' = y^2");
+    expect(expr.requestedVisual).toBe("xfield");
+
+    expr = new Expression("y(x) = 90x");
+    expect(expr.requestedVisual).toBe("ycurve");
+    expr = new Expression("x(y) = 90y");
+    expect(expr.requestedVisual).toBe("xcurve");
+    expr = new Expression("y'(x, y) = 90x + y");
+    expect(expr.requestedVisual).toBe("yfield");
+    expr = new Expression("x'(x) = 90");
+    expect(expr.requestedVisual).toBe("xfield");
   });
 });

@@ -2,6 +2,27 @@ import {EvalGraph} from "$lib/numerical/evalGraph";
 import {exp} from "mathjs";
 import {Expression} from "$lib/numerical/expression";
 
+test("Simple eval", () => {
+  const exps = [
+    "y = x^2",
+    "x = 5y"
+  ].map((expr, i) => new Expression(expr, i.toString()));
+
+  const evalGraph = new EvalGraph();
+  exps.forEach((exp) => evalGraph.learn(exp));
+
+  expect(evalGraph.get("y")).toBe(undefined);
+  expect(evalGraph.get("x")).toBe(undefined);
+
+  evalGraph.specify("x", 2);
+  expect(evalGraph.get("0")).toBe(4);
+  expect(evalGraph.get("1")).toBe(undefined);
+
+  evalGraph.specify("y", 3);
+  expect(evalGraph.get("0")).toBe(4);
+  expect(evalGraph.get("1")).toBe(15);
+});
+
 test("Dependency evaluation", () => {
   const exps = [
     "f(1)",
@@ -76,7 +97,7 @@ test("Cycle detection", () => {
 
 test("Update heat", () => {
   const exps = [
-    "a=1",
+    "a=x",
     "b=a",
     "c=b",
     "d=c"
@@ -85,9 +106,13 @@ test("Update heat", () => {
   const evalGraph = new EvalGraph();
   exps.forEach((exp) => evalGraph.learn(exp));
 
-  const hot: Set<string> = evalGraph.forget("a");
-
+  let hot = evalGraph.specify("x", 3);
   for (const id of ["a", "b", "c", "d"]) {
+    expect(hot).toContain(id);
+  }
+
+  hot = evalGraph.forget("b");
+  for (const id of ["b", "c", "d"]) {
     expect(hot).toContain(id);
   }
 });

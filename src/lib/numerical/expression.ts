@@ -3,7 +3,7 @@ import latexToAscii from "$lib/utils/latexToAscii";
 import {
   BadLatexSyntax,
   CircularDependency,
-  ExprEvalError,
+  ExprEvalError, ImplicitFieldEquation,
   Not2DGraphable,
   ReservedSymbol
 } from "$lib/numerical/exprEvalError";
@@ -11,13 +11,20 @@ import {
 type Visual = "xcurve" | "ycurve" | "xfield" | "yfield" | "none";
 export type Scope = Map<string, number>;
 
+function extendMathJS() {
+  const isAlphaOriginal = math.parse.isAlpha;
+  math.parse.isAlpha = function (c, cPrev, cNext) {
+    return isAlphaOriginal(c, cPrev, cNext) || c === "'";
+  };
+}
+extendMathJS();
+
 export class Expression {
   public readonly latex: string;
   private _compiled?: math.EvalFunction;
   // such as "id(x) = 3x", or "id = 4"
   public id?: string;
-  // "y = x" type ycurve, or inferred if "f = a + b", or none if "a = 2"
-  public visual?: Visual = "none";
+  public requestedVisual?: Visual;
   // "f(_) = deps"
   public deps: Set<string> = new Set();
   // "f(args) = 1"
@@ -32,7 +39,8 @@ export class Expression {
       ast = math.parse(ascii);
       ast = this._meta(ast);
       this._compiled = ast.compile();
-    } catch (SyntaxError) {
+    } catch (e) {
+      if (!(e instanceof SyntaxError)) throw e;
       throw new BadLatexSyntax();
     }
 
@@ -84,20 +92,32 @@ export class Expression {
         break;
     }
 
-    // exclusive or
-    if (visual) {
-      if (root.type == "FunctionAssignmentNode") {
-        const hasX = args.has("x")
-        const hasY = args.has("y")
-
-        if (args.size > 1) throw new Not2DGraphable();
-        if (args.size == 1) {
-          if (!hasX && !hasY) throw new ReservedSymbol(name!);
-          if (visual == "xcurve" && !hasY) throw new CircularDependency(name!);
-          if (visual == "ycurve" && !hasX) throw new CircularDependency(name!);
-        }
-      }
-    }
+    // if (name == "y" || name == "x") {
+    //   if (name == 'y') {
+    //     if (deps.size == 1 && !deps.has('x')) throw new CircularDependency(name);
+    //       if (deps.has('x')) yForm = true;
+    //     }
+    //   } else if (name == 'x') {
+    //     if (deps.size == 0) xForm = true;
+    //     else if (deps.size == 1) {
+    //       if (deps.has('y')) xForm = true;
+    //     }
+    //   }
+    //
+    //   // confirm directly graphable functions (without dependency evaluation)
+    //   // are in form y(x) or x(y)
+    //   if (root.type == "FunctionAssignmentNode") {
+    //     if (args.size > 1) throw new Not2DGraphable();
+    //     if (args.size == 1) {
+    //       const argX = args.has('x');
+    //       const argY = args.has('y');
+    //
+    //       if (!argX && !argY) throw new ReservedSymbol(name!);
+    //       if (yForm && argY) throw new CircularDependency(name!);
+    //       if (xForm && argX) throw new CircularDependency(name!);
+    //     }
+    //   }
+    // }
 
     traversalHead.traverse((node) => {
       if (node.type !== "SymbolNode") return;
@@ -107,23 +127,15 @@ export class Expression {
       deps.add(symNode.name);
     });
 
-    if (!visual) {
-      if (args.size == 0) {
-        if (!('x' in deps || 'y' in deps)) {
-          visual = "none";
-        }
-      }
-    }
-
     for (const dep of deps) {
       if (dep === "y'" || dep === "x'") {
-        throw new ExprEvalError("Only explicit differential equations in y' or x' are supported");
+        throw new ImplicitFieldEquation();
       }
     }
 
     this.deps = deps;
     this.args = args;
-    this.visual = visual;
+    this.requestedVisual = visual;
     return root;
   }
 

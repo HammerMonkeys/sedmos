@@ -5,14 +5,6 @@ import {Expression, type Scope} from "$lib/numerical/expression";
 
 // TODO: this needs string interning
 
-function extendMathJS() {
-  const isAlphaOriginal = math.parse.isAlpha;
-  math.parse.isAlpha = function (c, cPrev, cNext) {
-    return isAlphaOriginal(c, cPrev, cNext) || c === "'";
-  };
-}
-extendMathJS();
-
 class EvalState {
   public readonly expr?: Expression;
   public scope?: Scope;
@@ -170,7 +162,8 @@ export class EvalGraph {
     const vis = node.value.expr?.requestedVisual;
 
     if (!vis) {
-      throw new Error(`id ${id} has no visual type; impl inference`);
+      console.log("!! Visual type inference is not implemented yet !!")
+      return "none";
     }
 
     return vis;

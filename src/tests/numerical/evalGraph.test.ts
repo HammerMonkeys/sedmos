@@ -73,3 +73,21 @@ test("Cycle detection", () => {
 
   expect(() => evalGraph.learn(new Expression("a=d"))).toThrow();
 });
+
+test("Update heat", () => {
+  const exps = [
+    "a=1",
+    "b=a",
+    "c=b",
+    "d=c"
+  ].map((expr) => new Expression(expr));
+
+  const evalGraph = new EvalGraph();
+  exps.forEach((exp) => evalGraph.learn(exp));
+
+  const hot: Set<string> = evalGraph.forget("a");
+
+  for (const id of ["a", "b", "c", "d"]) {
+    expect(hot).toContain(id);
+  }
+});

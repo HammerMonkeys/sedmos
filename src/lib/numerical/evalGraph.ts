@@ -31,7 +31,7 @@ class EvalState {
       .reduce((acc, curr) =>
           new Map([...acc, ...curr!]),
         new Map());
-    this.value = this.expr?.eval(this.scope);
+    this.value = this.expr!.eval(this.scope);
   }
 }
 
@@ -43,7 +43,7 @@ export class EvalGraph {
     state.scope = new Map([[id, value]]);
     state.value = value;
     this._depGraph.set(id, state);
-    this._refresh(id);
+    return this._refresh(id);
   }
 
   public learn(expr: Expression) {
@@ -96,6 +96,7 @@ export class EvalGraph {
   private _refresh(id: string) {
     // a set of ids that have been updated in the current refresh
     const hot = new Set<string>();
+    hot.add(id);
 
     function refresh_recursive(node: DiGraphNode<EvalState>) {
       let parentScopes = [];
@@ -118,6 +119,10 @@ export class EvalGraph {
         if (state.scope !== undefined) {
           state.scope = undefined;
           state.value = undefined;
+
+          if (state.expr && state.expr!.id) {
+            hot.add(state.expr!.id);
+          }
         }
       }
 
@@ -149,7 +154,25 @@ export class EvalGraph {
   }
 
   private _inferVisualType(id: string) {
-    // TODO: infer visual type
-    throw new Error("Not implemented");
+    const expr = this._depGraph.get(id)?.value.expr;
+    if (!expr) return;
+    const vis = expr.requestedVisual;
+    if (vis) return;
+  }
+
+  public getVisualType(id: string) {
+    const node = this._depGraph.get(id);
+
+    if (!node) {
+      throw new Error(`id ${id} not found`);
+    }
+
+    const vis = node.value.expr?.requestedVisual;
+
+    if (!vis) {
+      throw new Error(`id ${id} has no visual type; impl inference`);
+    }
+
+    return vis;
   }
 }
